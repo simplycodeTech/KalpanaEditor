@@ -1,0 +1,211 @@
+<div class="kalpna-editor" [class.kalpna-readonly]="readOnly" [class.kalpna-disabled]="disabled">
+  <!-- Toolbar -->
+  <div class="kalpna-toolbar" role="toolbar" aria-label="Editor toolbar" *ngIf="!readOnly && !disabled">
+    <button type="button" class="kalpna-btn" title="Bold" aria-label="Bold"
+      *ngIf="hasToolbarItem('bold')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="applyBold()">
+      <strong>B</strong>
+    </button>
+    <button type="button" class="kalpna-btn" title="Italic" aria-label="Italic"
+      *ngIf="hasToolbarItem('italic')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="applyItalic()">
+      <em>I</em>
+    </button>
+    <button type="button" class="kalpna-btn" title="Underline" aria-label="Underline"
+      *ngIf="hasToolbarItem('underline')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="applyUnderline()">
+      <span style="text-decoration: underline">U</span>
+    </button>
+    <button type="button" class="kalpna-btn" title="Strikethrough" aria-label="Strikethrough"
+      *ngIf="hasToolbarItem('strikethrough')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="applyStrike()">
+      <s>S</s>
+    </button>
+
+    <span class="kalpna-sep" *ngIf="hasToolbarItem('fontFamily') || hasToolbarItem('fontSize')"></span>
+
+    <select class="kalpna-select" title="Font family" aria-label="Font family"
+      *ngIf="hasToolbarItem('fontFamily')"
+      [(ngModel)]="selectedFontFamily"
+      (mousedown)="saveSelection()"
+      (change)="applyFontFamily(selectedFontFamily)">
+      <option value="">Font</option>
+      <option *ngFor="let f of fontFamilies" [value]="f">{{ f }}</option>
+    </select>
+
+    <select class="kalpna-select" title="Font size" aria-label="Font size"
+      *ngIf="hasToolbarItem('fontSize')"
+      [(ngModel)]="selectedFontSize"
+      (mousedown)="saveSelection()"
+      (change)="applyFontSize(selectedFontSize)">
+      <option value="">Size</option>
+      <option *ngFor="let s of fontSizes" [value]="s">{{ s }}</option>
+    </select>
+
+    <span class="kalpna-sep" *ngIf="hasToolbarItem('textColor') || hasToolbarItem('highlight')"></span>
+
+    <div class="kalpna-color-wrap" *ngIf="hasToolbarItem('textColor')">
+      <button type="button" class="kalpna-btn" title="Text color" aria-label="Text color"
+        (mousedown)="$event.preventDefault(); saveSelection()" (click)="openColorPicker('text')">A</button>
+      <input #textColorInput type="color" class="kalpna-color-input" aria-label="Pick text color"
+        (mousedown)="saveSelection()" (input)="applyColor('color', $event)" />
+    </div>
+    <div class="kalpna-color-wrap" *ngIf="hasToolbarItem('highlight')">
+      <button type="button" class="kalpna-btn" title="Highlight" aria-label="Highlight color"
+        (mousedown)="$event.preventDefault(); saveSelection()" (click)="openColorPicker('bg')">H</button>
+      <input #bgColorInput type="color" class="kalpna-color-input" aria-label="Pick highlight color"
+        (mousedown)="saveSelection()" (input)="applyColor('backgroundColor', $event)" />
+    </div>
+
+    <span class="kalpna-sep" *ngIf="hasToolbarItem('heading')"></span>
+
+    <select class="kalpna-select" title="Heading" aria-label="Paragraph format"
+      *ngIf="hasToolbarItem('heading')"
+      [(ngModel)]="selectedHeading"
+      (mousedown)="saveSelection()"
+      (change)="applyHeading(selectedHeading)">
+      <option value="">Format</option>
+      <option value="p">Paragraph</option>
+      <option value="h1">Heading 1</option>
+      <option value="h2">Heading 2</option>
+      <option value="h3">Heading 3</option>
+      <option value="h4">Heading 4</option>
+      <option value="h5">Heading 5</option>
+      <option value="h6">Heading 6</option>
+    </select>
+
+    <span class="kalpna-sep"></span>
+
+    <button type="button" class="kalpna-btn" title="Align left" aria-label="Align left"
+      *ngIf="hasToolbarItem('alignLeft')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="applyAlignment('left')">⬅</button>
+    <button type="button" class="kalpna-btn" title="Align center" aria-label="Align center"
+      *ngIf="hasToolbarItem('alignCenter')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="applyAlignment('center')">⬌</button>
+    <button type="button" class="kalpna-btn" title="Align right" aria-label="Align right"
+      *ngIf="hasToolbarItem('alignRight')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="applyAlignment('right')">➡</button>
+    <button type="button" class="kalpna-btn" title="Justify" aria-label="Justify"
+      *ngIf="hasToolbarItem('alignJustify')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="applyAlignment('justify')">☰</button>
+
+    <span class="kalpna-sep"></span>
+
+    <button type="button" class="kalpna-btn" title="Bullet list" aria-label="Unordered list"
+      *ngIf="hasToolbarItem('unorderedList')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="insertUnorderedList()">• List</button>
+    <button type="button" class="kalpna-btn" title="Numbered list" aria-label="Ordered list"
+      *ngIf="hasToolbarItem('orderedList')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="insertOrderedList()">1. List</button>
+    <button type="button" class="kalpna-btn" title="Indent" aria-label="Indent"
+      *ngIf="hasToolbarItem('indent')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="indent()">→|</button>
+    <button type="button" class="kalpna-btn" title="Outdent" aria-label="Outdent"
+      *ngIf="hasToolbarItem('outdent')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="outdent()">|←</button>
+    <button type="button" class="kalpna-btn" title="Blockquote" aria-label="Blockquote"
+      *ngIf="hasToolbarItem('blockquote')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="insertBlockquote()">“”</button>
+
+    <span class="kalpna-sep"></span>
+
+    <button type="button" class="kalpna-btn" title="Insert link" aria-label="Insert link"
+      *ngIf="hasToolbarItem('link')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="openLinkDialog()">Link</button>
+    <button type="button" class="kalpna-btn" title="Remove link" aria-label="Remove link"
+      *ngIf="hasToolbarItem('unlink') && isLinkSelected" (mousedown)="$event.preventDefault(); saveSelection()" (click)="unlink()">Unlink</button>
+
+    <button type="button" class="kalpna-btn" title="Insert image (file)" aria-label="Upload image"
+      *ngIf="hasToolbarItem('image')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="triggerImageUpload()">Image</button>
+    <button type="button" class="kalpna-btn" title="Insert image from URL" aria-label="Image from URL"
+      *ngIf="hasToolbarItem('image')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="openImageUrlDialog()">URL</button>
+
+    <button type="button" class="kalpna-btn" title="Insert table" aria-label="Insert table"
+      *ngIf="hasToolbarItem('table')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="toggleTableForm()">Table</button>
+
+    <span class="kalpna-sep"></span>
+
+    <button type="button" class="kalpna-btn" title="Undo" aria-label="Undo"
+      *ngIf="hasToolbarItem('undo')" (mousedown)="$event.preventDefault()" (click)="undo()">↶</button>
+    <button type="button" class="kalpna-btn" title="Redo" aria-label="Redo"
+      *ngIf="hasToolbarItem('redo')" (mousedown)="$event.preventDefault()" (click)="redo()">↷</button>
+    <button type="button" class="kalpna-btn" title="Clear formatting" aria-label="Clear formatting"
+      *ngIf="hasToolbarItem('clear')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="clearFormatting()">Clear</button>
+    <button type="button" class="kalpna-btn" title="Source code" aria-label="Toggle source code"
+      *ngIf="hasToolbarItem('source')"
+      [class.kalpna-btn-active]="isSourceView"
+      (mousedown)="$event.preventDefault()" (click)="toggleSourceCode()">&lt;/&gt;</button>
+  </div>
+
+  <!-- Table form -->
+  <div class="kalpna-table-form" *ngIf="showTableForm && !readOnly && !disabled">
+    <label>
+      Rows
+      <input type="number" min="1" max="50" [(ngModel)]="tableRows" class="kalpna-input" />
+    </label>
+    <label>
+      Columns
+      <input type="number" min="1" max="20" [(ngModel)]="tableCols" class="kalpna-input" />
+    </label>
+    <button type="button" class="kalpna-btn kalpna-btn-primary" (click)="insertTable()">Insert</button>
+    <button type="button" class="kalpna-btn" (click)="showTableForm = false">Cancel</button>
+    <span class="kalpna-table-ops">
+      <button type="button" class="kalpna-btn" title="Add row" (click)="addTableRow()">+ Row</button>
+      <button type="button" class="kalpna-btn" title="Delete row" (click)="deleteTableRow()">− Row</button>
+      <button type="button" class="kalpna-btn" title="Add column" (click)="addTableColumn()">+ Col</button>
+      <button type="button" class="kalpna-btn" title="Delete column" (click)="deleteTableColumn()">− Col</button>
+      <button type="button" class="kalpna-btn" title="Delete table" (click)="deleteTable()">Delete table</button>
+    </span>
+  </div>
+
+  <!-- Link dialog -->
+  <div class="kalpna-dialog" *ngIf="showLinkDialog" role="dialog" aria-label="Insert link">
+    <label>
+      URL
+      <input type="text" class="kalpna-input" [(ngModel)]="linkUrl" placeholder="https://example.com" />
+    </label>
+    <label class="kalpna-check">
+      <input type="checkbox" [(ngModel)]="linkNewTab" /> Open in new tab
+    </label>
+    <div class="kalpna-dialog-actions">
+      <button type="button" class="kalpna-btn kalpna-btn-primary" (click)="applyLink()">Apply</button>
+      <button type="button" class="kalpna-btn" (click)="cancelLinkDialog()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Image URL dialog -->
+  <div class="kalpna-dialog" *ngIf="showImageUrlDialog" role="dialog" aria-label="Insert image from URL">
+    <label>
+      Image URL
+      <input type="text" class="kalpna-input" [(ngModel)]="imageUrl" placeholder="https://example.com/image.png" />
+    </label>
+    <label>
+      Alt text
+      <input type="text" class="kalpna-input" [(ngModel)]="imageAlt" placeholder="Description" />
+    </label>
+    <div class="kalpna-dialog-actions">
+      <button type="button" class="kalpna-btn kalpna-btn-primary" (click)="applyImageFromUrl()">Insert</button>
+      <button type="button" class="kalpna-btn" (click)="cancelImageUrlDialog()">Cancel</button>
+    </div>
+  </div>
+
+  <input #fileInput type="file" accept="image/*" hidden (change)="onImageFileSelected($event)" />
+
+  <!-- Editor surface -->
+  <div
+    #editor
+    class="kalpna-content"
+    [attr.contenteditable]="!disabled && !readOnly && !isSourceView"
+    [attr.aria-label]="placeholder"
+    [attr.data-placeholder]="placeholder"
+    [style.minHeight]="minHeight"
+    [hidden]="isSourceView"
+    (input)="onEditorInput()"
+    (focus)="onEditorFocus()"
+    (blur)="onEditorBlur()"
+    (mouseup)="onSelectionChange()"
+    (keyup)="onSelectionChange()"
+    (paste)="onPaste($event)"
+    role="textbox"
+    aria-multiline="true"
+  ></div>
+
+  <!-- Source view -->
+  <textarea
+    *ngIf="isSourceView"
+    #sourceArea
+    class="kalpna-source"
+    [style.minHeight]="minHeight"
+    [(ngModel)]="sourceHtml"
+    (input)="onSourceInput()"
+    [disabled]="disabled || readOnly"
+    aria-label="HTML source"
+    spellcheck="false"
+  ></textarea>
+</div>

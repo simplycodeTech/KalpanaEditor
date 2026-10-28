@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+.npm
+
+# Build
+dist/
+out-tsc/
+tmp/
+*.tgz
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Logs & coverage
+logs/
+*.log
+coverage/
+.nyc_output/
+
+# Angular
+.angular/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Misc
+*.tsbuildinfo
+.sass-cache/

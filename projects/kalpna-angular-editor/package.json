@@ -1,0 +1,38 @@
+{
+  "name": "kalpna-angular-editor",
+  "version": "0.1.0",
+  "description": "A lightweight, secure, production-ready Angular rich text editor library with formatting, tables, images, and source mode.",
+  "keywords": [
+    "angular",
+    "editor",
+    "rich-text",
+    "wysiwyg",
+    "contenteditable",
+    "kalpna"
+  ],
+  "author": {
+    "name": "Suryakant Ubhe",
+    "url": "https://www.npmjs.com/~spubhe"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/simplycodeTech/kalpna-angular-editor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/simplycodeTech/kalpna-angular-editor/issues"
+  },
+  "homepage": "https://github.com/simplycodeTech/kalpna-angular-editor#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@angular/common": ">=17.0.0 <20.0.0",
+    "@angular/core": ">=17.0.0 <20.0.0",
+    "@angular/forms": ">=17.0.0 <20.0.0"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
+  },
+  "sideEffects": false
+}
