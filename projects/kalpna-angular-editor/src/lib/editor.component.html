@@ -1,211 +1,747 @@
-<div class="kalpna-editor" [class.kalpna-readonly]="readOnly" [class.kalpna-disabled]="disabled">
-  <!-- Toolbar -->
-  <div class="kalpna-toolbar" role="toolbar" aria-label="Editor toolbar" *ngIf="!readOnly && !disabled">
-    <button type="button" class="kalpna-btn" title="Bold" aria-label="Bold"
-      *ngIf="hasToolbarItem('bold')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="applyBold()">
-      <strong>B</strong>
-    </button>
-    <button type="button" class="kalpna-btn" title="Italic" aria-label="Italic"
-      *ngIf="hasToolbarItem('italic')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="applyItalic()">
-      <em>I</em>
-    </button>
-    <button type="button" class="kalpna-btn" title="Underline" aria-label="Underline"
-      *ngIf="hasToolbarItem('underline')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="applyUnderline()">
-      <span style="text-decoration: underline">U</span>
-    </button>
-    <button type="button" class="kalpna-btn" title="Strikethrough" aria-label="Strikethrough"
-      *ngIf="hasToolbarItem('strikethrough')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="applyStrike()">
-      <s>S</s>
-    </button>
+<div #root class="kalpna-editor"
+  [class.kalpna-readonly]="readOnly"
+  [class.kalpna-disabled]="disabled"
+  [class.kalpna-fullscreen]="isFullscreen"
+  [class.kalpna-show-blocks]="showBlocks"
+  (keydown)="onRootKeyDown($event)">
 
-    <span class="kalpna-sep" *ngIf="hasToolbarItem('fontFamily') || hasToolbarItem('fontSize')"></span>
+  <!-- ============================== TOOLBAR ============================== -->
+  @if (!readOnly && !disabled) {
+  <div #toolbarEl class="kalpna-toolbar" [class.kalpna-sticky]="config.stickyToolbar !== false && !isFullscreen"
+    role="toolbar" aria-label="Editor toolbar" (mousedown)="keepSelection($event)" (keydown)="onToolbarKeyDown($event)">
+    @for (item of activeToolbar; track $index) {
+      @switch (item) {
+        @case ('|') { <span class="kalpna-sep" role="separator"></span> }
 
-    <select class="kalpna-select" title="Font family" aria-label="Font family"
-      *ngIf="hasToolbarItem('fontFamily')"
-      [(ngModel)]="selectedFontFamily"
-      (mousedown)="saveSelection()"
-      (change)="applyFontFamily(selectedFontFamily)">
-      <option value="">Font</option>
-      <option *ngFor="let f of fontFamilies" [value]="f">{{ f }}</option>
-    </select>
+        @case ('heading') {
+          <div class="kalpna-dd">
+            <button type="button" class="kalpna-btn kalpna-btn-text" [disabled]="isItemDisabled(item)" [title]="t('heading')"
+              [attr.aria-expanded]="openMenu === 'heading'" (click)="toggleMenu('heading', $event)">
+              <span class="kalpna-dd-label">{{ headingLabel }}</span><span class="kalpna-icon kalpna-caret" [innerHTML]="icon('caret')"></span>
+            </button>
+            @if (openMenu === 'heading') {
+              <div class="kalpna-panel" role="menu">
+                @for (h of headingOptions; track h.tag) {
+                  <button type="button" class="kalpna-item" role="menuitemradio" [attr.aria-checked]="currentBlock === h.tag"
+                    [class.kalpna-on]="currentBlock === h.tag" (click)="applyHeading(h.tag)">
+                    <span [style.font-size]="h.tag === 'h1' ? '1.6em' : h.tag === 'h2' ? '1.4em' : h.tag === 'h3' ? '1.2em' : h.tag === 'h4' ? '1.08em' : '1em'"
+                      [style.font-weight]="h.tag.startsWith('h') ? '600' : '400'"
+                      [style.font-family]="h.tag === 'pre' ? 'monospace' : null">{{ t(h.key) }}</span>
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        }
 
-    <select class="kalpna-select" title="Font size" aria-label="Font size"
-      *ngIf="hasToolbarItem('fontSize')"
-      [(ngModel)]="selectedFontSize"
-      (mousedown)="saveSelection()"
-      (change)="applyFontSize(selectedFontSize)">
-      <option value="">Size</option>
-      <option *ngFor="let s of fontSizes" [value]="s">{{ s }}</option>
-    </select>
+        @case ('fontFamily') {
+          <div class="kalpna-dd">
+            <button type="button" class="kalpna-btn kalpna-btn-text" [disabled]="isItemDisabled(item)" [title]="t('fontFamily')"
+              [attr.aria-expanded]="openMenu === 'fontFamily'" (click)="toggleMenu('fontFamily', $event)">
+              <span class="kalpna-dd-label">{{ currentFont || t('fontFamily') }}</span><span class="kalpna-icon kalpna-caret" [innerHTML]="icon('caret')"></span>
+            </button>
+            @if (openMenu === 'fontFamily') {
+              <div class="kalpna-panel" role="menu">
+                <button type="button" class="kalpna-item" [class.kalpna-on]="!currentFont" (click)="applyFontFamily('')">{{ t('defaultValue') }}</button>
+                @for (f of fontFamilies; track f) {
+                  <button type="button" class="kalpna-item" [class.kalpna-on]="currentFont === f" [style.font-family]="f" (click)="applyFontFamily(f)">{{ f }}</button>
+                }
+              </div>
+            }
+          </div>
+        }
 
-    <span class="kalpna-sep" *ngIf="hasToolbarItem('textColor') || hasToolbarItem('highlight')"></span>
+        @case ('fontSize') {
+          <div class="kalpna-dd">
+            <button type="button" class="kalpna-btn kalpna-btn-text" [disabled]="isItemDisabled(item)" [title]="t('fontSize')"
+              [attr.aria-expanded]="openMenu === 'fontSize'" (click)="toggleMenu('fontSize', $event)">
+              <span class="kalpna-icon" [innerHTML]="icon('fontSize')"></span>
+              <span class="kalpna-dd-label" style="min-width: 34px">{{ currentSize || t('defaultValue') }}</span><span class="kalpna-icon kalpna-caret" [innerHTML]="icon('caret')"></span>
+            </button>
+            @if (openMenu === 'fontSize') {
+              <div class="kalpna-panel" role="menu">
+                <button type="button" class="kalpna-item" [class.kalpna-on]="!currentSize" (click)="applyFontSize('')">{{ t('defaultValue') }}</button>
+                @for (s of fontSizes; track s) {
+                  <button type="button" class="kalpna-item" [class.kalpna-on]="currentSize === s" (click)="applyFontSize(s)">{{ s }}</button>
+                }
+              </div>
+            }
+          </div>
+        }
 
-    <div class="kalpna-color-wrap" *ngIf="hasToolbarItem('textColor')">
-      <button type="button" class="kalpna-btn" title="Text color" aria-label="Text color"
-        (mousedown)="$event.preventDefault(); saveSelection()" (click)="openColorPicker('text')">A</button>
-      <input #textColorInput type="color" class="kalpna-color-input" aria-label="Pick text color"
-        (mousedown)="saveSelection()" (input)="applyColor('color', $event)" />
+        @case ('textColor') {
+          <div class="kalpna-dd">
+            <div class="kalpna-row">
+              <button type="button" class="kalpna-btn kalpna-btn-color" [disabled]="isItemDisabled(item)" [title]="t('textColor')" (click)="applyTextColor(lastTextColor)">
+                <span class="kalpna-icon" [innerHTML]="icon('textColor')"></span><span class="kalpna-color-bar" [style.background]="lastTextColor"></span>
+              </button>
+              <button type="button" class="kalpna-btn" style="min-width: 16px; padding: 0" [disabled]="isItemDisabled(item)" [title]="t('textColor')"
+                [attr.aria-expanded]="openMenu === 'textColor'" (click)="toggleMenu('textColor', $event)">
+                <span class="kalpna-icon kalpna-caret" [innerHTML]="icon('caret')"></span>
+              </button>
+            </div>
+            @if (openMenu === 'textColor') {
+              <div class="kalpna-panel">
+                <button type="button" class="kalpna-item" (click)="applyTextColor('')"><span class="kalpna-icon" [innerHTML]="icon('clear')"></span>{{ t('removeColor') }}</button>
+                <div class="kalpna-colors">
+                  @for (c of colors; track c.color) {
+                    <button type="button" class="kalpna-swatch" [style.background]="c.color" [title]="c.label" [attr.aria-label]="c.label" (click)="applyTextColor(c.color)"></button>
+                  }
+                </div>
+                <label class="kalpna-item">{{ t('customColor') }}
+                  <input type="color" [value]="lastTextColor" (change)="onCustomColor('text', $event)" style="margin-left:auto" /></label>
+              </div>
+            }
+          </div>
+        }
+
+        @case ('backgroundColor') {
+          <div class="kalpna-dd">
+            <div class="kalpna-row">
+              <button type="button" class="kalpna-btn kalpna-btn-color" [disabled]="isItemDisabled(item)" [title]="t('backgroundColor')" (click)="applyBackgroundColor(lastBgColor)">
+                <span class="kalpna-icon" [innerHTML]="icon('backgroundColor')"></span><span class="kalpna-color-bar" [style.background]="lastBgColor"></span>
+              </button>
+              <button type="button" class="kalpna-btn" style="min-width: 16px; padding: 0" [disabled]="isItemDisabled(item)" [title]="t('backgroundColor')"
+                [attr.aria-expanded]="openMenu === 'backgroundColor'" (click)="toggleMenu('backgroundColor', $event)">
+                <span class="kalpna-icon kalpna-caret" [innerHTML]="icon('caret')"></span>
+              </button>
+            </div>
+            @if (openMenu === 'backgroundColor') {
+              <div class="kalpna-panel">
+                <button type="button" class="kalpna-item" (click)="applyBackgroundColor('')"><span class="kalpna-icon" [innerHTML]="icon('clear')"></span>{{ t('removeColor') }}</button>
+                <div class="kalpna-colors">
+                  @for (c of colors; track c.color) {
+                    <button type="button" class="kalpna-swatch" [style.background]="c.color" [title]="c.label" [attr.aria-label]="c.label" (click)="applyBackgroundColor(c.color)"></button>
+                  }
+                </div>
+                <label class="kalpna-item">{{ t('customColor') }}
+                  <input type="color" [value]="lastBgColor" (change)="onCustomColor('bg', $event)" style="margin-left:auto" /></label>
+              </div>
+            }
+          </div>
+        }
+
+        @case ('highlight') {
+          <div class="kalpna-dd">
+            <div class="kalpna-row">
+              <button type="button" class="kalpna-btn kalpna-btn-color" [disabled]="isItemDisabled(item)" [title]="t('highlight')" (click)="applyHighlight(lastHighlight)">
+                <span class="kalpna-icon" [innerHTML]="icon('highlight')"></span><span class="kalpna-color-bar" [style.background]="highlightColor(lastHighlight)"></span>
+              </button>
+              <button type="button" class="kalpna-btn" style="min-width: 16px; padding: 0" [disabled]="isItemDisabled(item)" [title]="t('highlight')"
+                [attr.aria-expanded]="openMenu === 'highlight'" (click)="toggleMenu('highlight', $event)">
+                <span class="kalpna-icon kalpna-caret" [innerHTML]="icon('caret')"></span>
+              </button>
+            </div>
+            @if (openMenu === 'highlight') {
+              <div class="kalpna-panel">
+                @for (h of highlighters; track h.cls) {
+                  <button type="button" class="kalpna-item" (click)="applyHighlight(h.cls)">
+                    <span class="kalpna-swatch" [style.background]="h.cls.startsWith('pen') ? 'transparent' : h.color" [style.color]="h.color"
+                      style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:18px;font-weight:700">{{ h.cls.startsWith('pen') ? 'A' : '' }}</span>{{ h.label }}
+                  </button>
+                }
+                <div class="kalpna-item-sep"></div>
+                <button type="button" class="kalpna-item" (click)="applyHighlight(null)"><span class="kalpna-icon" [innerHTML]="icon('clear')"></span>{{ t('removeHighlight') }}</button>
+              </div>
+            }
+          </div>
+        }
+
+        @case ('lineHeight') {
+          <div class="kalpna-dd">
+            <button type="button" class="kalpna-btn" [disabled]="isItemDisabled(item)" [title]="t('lineHeight')"
+              [attr.aria-expanded]="openMenu === 'lineHeight'" (click)="toggleMenu('lineHeight', $event)">
+              <span class="kalpna-icon" [innerHTML]="icon('lineHeight')"></span><span class="kalpna-icon kalpna-caret" [innerHTML]="icon('caret')"></span>
+            </button>
+            @if (openMenu === 'lineHeight') {
+              <div class="kalpna-panel" style="min-width: 110px">
+                <button type="button" class="kalpna-item" [class.kalpna-on]="!currentLineHeight" (click)="applyLineHeight('')">{{ t('defaultValue') }}</button>
+                @for (lh of lineHeights; track lh) {
+                  <button type="button" class="kalpna-item" [class.kalpna-on]="currentLineHeight === lh" (click)="applyLineHeight(lh)">{{ lh }}</button>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        @case ('alignment') {
+          <div class="kalpna-dd">
+            <button type="button" class="kalpna-btn" [disabled]="isItemDisabled(item)" [title]="t('alignment')"
+              [attr.aria-expanded]="openMenu === 'alignment'" (click)="toggleMenu('alignment', $event)">
+              <span class="kalpna-icon" [innerHTML]="icon(alignIcon)"></span><span class="kalpna-icon kalpna-caret" [innerHTML]="icon('caret')"></span>
+            </button>
+            @if (openMenu === 'alignment') {
+              <div class="kalpna-panel" style="min-width: 0">
+                <div class="kalpna-row">
+                  @for (a of ['left', 'center', 'right', 'justify']; track a) {
+                    <button type="button" class="kalpna-btn" [class.kalpna-on]="currentAlign === a"
+                      [title]="t('align' + a.charAt(0).toUpperCase() + a.slice(1))"
+                      (click)="applyAlignment($any(a))"><span class="kalpna-icon" [innerHTML]="icon('align' + a.charAt(0).toUpperCase() + a.slice(1))"></span></button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        @case ('textDirection') {
+          <div class="kalpna-dd">
+            <button type="button" class="kalpna-btn" [disabled]="isItemDisabled(item)" [title]="t('textDirection')"
+              [attr.aria-expanded]="openMenu === 'textDirection'" (click)="toggleMenu('textDirection', $event)">
+              <span class="kalpna-icon" [innerHTML]="icon(on['rtl'] ? 'rtl' : 'ltr')"></span><span class="kalpna-icon kalpna-caret" [innerHTML]="icon('caret')"></span>
+            </button>
+            @if (openMenu === 'textDirection') {
+              <div class="kalpna-panel">
+                <button type="button" class="kalpna-item" [class.kalpna-on]="!on['rtl']" (click)="applyTextDirection('ltr')"><span class="kalpna-icon" [innerHTML]="icon('ltr')"></span>{{ t('ltr') }}</button>
+                <button type="button" class="kalpna-item" [class.kalpna-on]="on['rtl']" (click)="applyTextDirection('rtl')"><span class="kalpna-icon" [innerHTML]="icon('rtl')"></span>{{ t('rtl') }}</button>
+              </div>
+            }
+          </div>
+        }
+
+        @case ('caseChange') {
+          <div class="kalpna-dd">
+            <button type="button" class="kalpna-btn" [disabled]="isItemDisabled(item)" [title]="t('caseChange')"
+              [attr.aria-expanded]="openMenu === 'caseChange'" (click)="toggleMenu('caseChange', $event)">
+              <span class="kalpna-icon" [innerHTML]="icon('caseChange')"></span><span class="kalpna-icon kalpna-caret" [innerHTML]="icon('caret')"></span>
+            </button>
+            @if (openMenu === 'caseChange') {
+              <div class="kalpna-panel">
+                <button type="button" class="kalpna-item" (click)="applyCase('upper')">{{ t('upperCase') }}</button>
+                <button type="button" class="kalpna-item" (click)="applyCase('lower')">{{ t('lowerCase') }}</button>
+                <button type="button" class="kalpna-item" (click)="applyCase('title')">{{ t('titleCase') }}</button>
+                <button type="button" class="kalpna-item" (click)="applyCase('sentence')">{{ t('sentenceCase') }}</button>
+              </div>
+            }
+          </div>
+        }
+
+        @case ('unorderedList') {
+          <div class="kalpna-dd">
+            <div class="kalpna-row">
+              <button type="button" class="kalpna-btn" [class.kalpna-on]="on['unorderedList']" [disabled]="isItemDisabled(item)" [title]="t('unorderedList')"
+                [attr.aria-pressed]="!!on['unorderedList']" (click)="run('unorderedList')"><span class="kalpna-icon" [innerHTML]="icon('unorderedList')"></span></button>
+              <button type="button" class="kalpna-btn" style="min-width: 16px; padding: 0" [disabled]="isItemDisabled(item)" [title]="t('listStyle')"
+                [attr.aria-expanded]="openMenu === 'unorderedList'" (click)="toggleMenu('unorderedList', $event)"><span class="kalpna-icon kalpna-caret" [innerHTML]="icon('caret')"></span></button>
+            </div>
+            @if (openMenu === 'unorderedList') {
+              <div class="kalpna-panel" style="min-width: 0">
+                <div class="kalpna-row">
+                  @for (st of bulletStyles; track st) {
+                    <button type="button" class="kalpna-btn" [title]="st" [class.kalpna-on]="on['unorderedList'] && currentListStyle() === st" (click)="insertUnorderedList(st)">
+                      <ul [style.list-style-type]="st" style="margin:0;padding-left:16px;font-size:10px;line-height:1.1;text-align:left"><li>—</li><li>—</li></ul>
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        @case ('orderedList') {
+          <div class="kalpna-dd">
+            <div class="kalpna-row">
+              <button type="button" class="kalpna-btn" [class.kalpna-on]="on['orderedList']" [disabled]="isItemDisabled(item)" [title]="t('orderedList')"
+                [attr.aria-pressed]="!!on['orderedList']" (click)="run('orderedList')"><span class="kalpna-icon" [innerHTML]="icon('orderedList')"></span></button>
+              <button type="button" class="kalpna-btn" style="min-width: 16px; padding: 0" [disabled]="isItemDisabled(item)" [title]="t('listStyle')"
+                [attr.aria-expanded]="openMenu === 'orderedList'" (click)="toggleMenu('orderedList', $event)"><span class="kalpna-icon kalpna-caret" [innerHTML]="icon('caret')"></span></button>
+            </div>
+            @if (openMenu === 'orderedList') {
+              <div class="kalpna-panel" style="min-width: 0">
+                <div class="kalpna-row" style="flex-wrap: wrap; max-width: 210px">
+                  @for (st of numberStyles; track st) {
+                    <button type="button" class="kalpna-btn" [title]="st" [class.kalpna-on]="on['orderedList'] && currentListStyle() === st" (click)="insertOrderedList(st)">
+                      <ol [style.list-style-type]="st" style="margin:0;padding-left:22px;font-size:9px;line-height:1.1;text-align:left"><li>—</li><li>—</li></ol>
+                    </button>
+                  }
+                </div>
+                @if (on['orderedList']) {
+                  <div class="kalpna-item-sep"></div>
+                  <div class="kalpna-form" style="min-width: 0; padding: 4px">
+                    <label class="kalpna-inline">{{ t('startAt') }}
+                      <input type="number" class="kalpna-input" style="width: 70px" min="0" [(ngModel)]="listStart" (change)="applyListProperties()" /></label>
+                    <label class="kalpna-inline"><input type="checkbox" [(ngModel)]="listReversed" (change)="applyListProperties()" /> {{ t('reversed') }}</label>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        @case ('table') {
+          <div class="kalpna-dd">
+            <button type="button" class="kalpna-btn" [disabled]="isItemDisabled(item)" [title]="t('table')"
+              [attr.aria-expanded]="openMenu === 'table'" (click)="toggleMenu('table', $event)">
+              <span class="kalpna-icon" [innerHTML]="icon('table')"></span><span class="kalpna-icon kalpna-caret" [innerHTML]="icon('caret')"></span>
+            </button>
+            @if (openMenu === 'table') {
+              <div class="kalpna-panel">
+                <div class="kalpna-grid-picker" (mouseleave)="gridHover(0, 0)">
+                  @for (r of gridRange; track r) {
+                    @for (c of gridRange; track c) {
+                      <button type="button" class="kalpna-grid-cell" [class.kalpna-hl]="r <= gridRows && c <= gridCols"
+                        [attr.aria-label]="r + ' × ' + c" (mouseenter)="gridHover(r, c)" (focus)="gridHover(r, c)" (click)="insertTable(r, c)"></button>
+                    }
+                  }
+                </div>
+                <div class="kalpna-grid-label">{{ gridRows ? gridRows + ' × ' + gridCols : t('table') }}</div>
+                <div class="kalpna-item-sep"></div>
+                <div class="kalpna-form" style="min-width: 0; flex-direction: row; align-items: flex-end">
+                  <label>{{ t('rows') }}<input type="number" min="1" max="100" class="kalpna-input" style="width: 64px" [(ngModel)]="tableRows" /></label>
+                  <label>{{ t('columns') }}<input type="number" min="1" max="30" class="kalpna-input" style="width: 64px" [(ngModel)]="tableCols" /></label>
+                  <button type="button" class="kalpna-btn kalpna-btn-primary" (click)="insertTable(tableRows, tableCols)">{{ t('insert') }}</button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        @case ('specialCharacters') {
+          <div class="kalpna-dd">
+            <button type="button" class="kalpna-btn" [disabled]="isItemDisabled(item)" [title]="t('specialCharacters')"
+              [attr.aria-expanded]="openMenu === 'specialCharacters'" (click)="toggleMenu('specialCharacters', $event)">
+              <span class="kalpna-icon" [innerHTML]="icon('specialCharacters')"></span>
+            </button>
+            @if (openMenu === 'specialCharacters') {
+              <div class="kalpna-panel kalpna-panel-right" style="max-height: 420px">
+                <div style="padding: 4px"><input class="kalpna-input" style="width: 100%" [placeholder]="t('search')" [(ngModel)]="charSearch" /></div>
+                @if (!charSearch) {
+                  <div class="kalpna-tabs">
+                    @for (cat of specialCharacters; track cat.name; let i = $index) {
+                      <button type="button" class="kalpna-tab" [class.kalpna-on]="charCategory === i" (click)="charCategory = i">{{ cat.name }}</button>
+                    }
+                  </div>
+                }
+                <div class="kalpna-chars">
+                  @for (ch of filteredChars; track $index) {
+                    <button type="button" class="kalpna-char" [title]="ch[1] || ch[0]" (click)="insertCharacter(ch[0])">{{ ch[0] }}</button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        @case ('emoji') {
+          <div class="kalpna-dd">
+            <button type="button" class="kalpna-btn" [disabled]="isItemDisabled(item)" [title]="t('emoji')"
+              [attr.aria-expanded]="openMenu === 'emoji'" (click)="toggleMenu('emoji', $event)">
+              <span class="kalpna-icon" [innerHTML]="icon('emoji')"></span>
+            </button>
+            @if (openMenu === 'emoji') {
+              <div class="kalpna-panel kalpna-panel-right" style="max-height: 400px">
+                <div class="kalpna-tabs">
+                  @for (cat of emojiCategories; track cat.name; let i = $index) {
+                    <button type="button" class="kalpna-tab" [class.kalpna-on]="emojiCategory === i" (click)="emojiCategory = i">{{ cat.name }}</button>
+                  }
+                </div>
+                <div class="kalpna-chars">
+                  @for (ch of currentEmojis.chars; track $index) {
+                    <button type="button" class="kalpna-char" [title]="ch[1] || ch[0]" (click)="insertCharacter(ch[0])">{{ ch[0] }}</button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        @default {
+          @if (simple(item); as def) {
+            <button type="button" class="kalpna-btn" [class.kalpna-on]="isItemOn(item)" [disabled]="isItemDisabled(item)"
+              [title]="title(item)" [attr.aria-label]="t(def.label)" [attr.aria-pressed]="isItemOn(item)" (click)="run(item)">
+              <span class="kalpna-icon" [innerHTML]="icon(item === 'fullscreen' && isFullscreen ? 'fullscreenExit' : def.icon)"></span>
+            </button>
+          }
+        }
+      }
+    }
+  </div>
+  }
+
+  <!-- ============================== FIND & REPLACE ============================== -->
+  @if (showFind && !isSourceView && !readOnly && !disabled) {
+    <div class="kalpna-find" role="search" (mousedown)="keepSelection($event)">
+      <input #findInput class="kalpna-input" [placeholder]="t('findPlaceholder')" [attr.aria-label]="t('find')"
+        [(ngModel)]="findText" (ngModelChange)="runFind(true)" (keydown)="onFindKeyDown($event)" />
+      <span class="kalpna-find-count">{{ findCount ? (findIndex + 1) + ' ' + t('of') + ' ' + findCount : (findText ? t('noResults') : '') }}</span>
+      <button type="button" class="kalpna-btn kalpna-btn-ghost" [disabled]="!findCount" (click)="findStep(-1)">{{ t('previous') }}</button>
+      <button type="button" class="kalpna-btn kalpna-btn-ghost" [disabled]="!findCount" (click)="findStep(1)">{{ t('next') }}</button>
+      <input class="kalpna-input" [placeholder]="t('replaceWith')" [attr.aria-label]="t('replace')" [(ngModel)]="replaceText" />
+      <button type="button" class="kalpna-btn kalpna-btn-ghost" [disabled]="!findCount" (click)="replaceOne()">{{ t('replace') }}</button>
+      <button type="button" class="kalpna-btn kalpna-btn-ghost" [disabled]="!findCount" (click)="replaceAll()">{{ t('replaceAll') }}</button>
+      <label class="kalpna-hint"><input type="checkbox" [(ngModel)]="findMatchCase" (ngModelChange)="runFind(true)" /> {{ t('matchCase') }}</label>
+      <label class="kalpna-hint"><input type="checkbox" [(ngModel)]="findWholeWords" (ngModelChange)="runFind(true)" /> {{ t('wholeWords') }}</label>
+      <button type="button" class="kalpna-btn" style="margin-left:auto" [title]="t('close')" (click)="toggleFind(false)"><span class="kalpna-icon" [innerHTML]="icon('close')"></span></button>
     </div>
-    <div class="kalpna-color-wrap" *ngIf="hasToolbarItem('highlight')">
-      <button type="button" class="kalpna-btn" title="Highlight" aria-label="Highlight color"
-        (mousedown)="$event.preventDefault(); saveSelection()" (click)="openColorPicker('bg')">H</button>
-      <input #bgColorInput type="color" class="kalpna-color-input" aria-label="Pick highlight color"
-        (mousedown)="saveSelection()" (input)="applyColor('backgroundColor', $event)" />
-    </div>
+  }
 
-    <span class="kalpna-sep" *ngIf="hasToolbarItem('heading')"></span>
+  <!-- ============================== EDITING AREA ============================== -->
+  <div #body class="kalpna-body">
+    <div
+      #editor
+      class="kalpna-content"
+      [attr.contenteditable]="!disabled && !readOnly && !isSourceView"
+      [attr.aria-label]="placeholder"
+      [attr.data-placeholder]="placeholder"
+      [style.minHeight]="minHeight"
+      [style.maxHeight]="isFullscreen ? null : (config.maxHeight || null)"
+      [hidden]="isSourceView"
+      (input)="onEditorInput($event)"
+      (focus)="onEditorFocus()"
+      (blur)="onEditorBlur()"
+      (keydown)="onEditorKeyDown($event)"
+      (mousedown)="onEditorMouseDown($event)"
+      (click)="onEditorClick($event)"
+      (paste)="onPaste($event)"
+      (drop)="onDrop($event)"
+      (dragover)="onDragOver($event)"
+      role="textbox"
+      aria-multiline="true"
+      spellcheck="true"
+    ></div>
 
-    <select class="kalpna-select" title="Heading" aria-label="Paragraph format"
-      *ngIf="hasToolbarItem('heading')"
-      [(ngModel)]="selectedHeading"
-      (mousedown)="saveSelection()"
-      (change)="applyHeading(selectedHeading)">
-      <option value="">Format</option>
-      <option value="p">Paragraph</option>
-      <option value="h1">Heading 1</option>
-      <option value="h2">Heading 2</option>
-      <option value="h3">Heading 3</option>
-      <option value="h4">Heading 4</option>
-      <option value="h5">Heading 5</option>
-      <option value="h6">Heading 6</option>
-    </select>
+    @if (isSourceView) {
+      <textarea
+        #sourceArea
+        class="kalpna-source"
+        [style.minHeight]="minHeight"
+        [style.height]="isFullscreen ? '100%' : null"
+        [(ngModel)]="sourceHtml"
+        (ngModelChange)="onSourceInput()"
+        [disabled]="disabled || readOnly"
+        aria-label="HTML source"
+        spellcheck="false"
+      ></textarea>
+    }
 
-    <span class="kalpna-sep"></span>
+    <!-- contextual balloons -->
+    @if (balloon && !isSourceView && !readOnly && !disabled) {
+      <div class="kalpna-balloon" [style.top.px]="balloon.top" [style.left.px]="balloon.left"
+        [class.kalpna-balloon-above]="balloon.above"
+        (mousedown)="keepSelection($event)">
+        @switch (balloon.type) {
+          @case ('link') {
+            <span class="kalpna-icon" [innerHTML]="icon('link')"></span>
+            <button type="button" class="kalpna-balloon-link" style="border:0;background:none;cursor:pointer;font:inherit" (click)="openCurrentLink()" [title]="t('openLink')">{{ currentLinkHref }}</button>
+            <button type="button" class="kalpna-btn" [title]="t('editLink')" (click)="openLinkDialog()"><span class="kalpna-icon" [innerHTML]="icon('edit')"></span></button>
+            <button type="button" class="kalpna-btn" [title]="t('openLink')" (click)="openCurrentLink()"><span class="kalpna-icon" [innerHTML]="icon('openInNew')"></span></button>
+            <button type="button" class="kalpna-btn" [title]="t('unlink')" (click)="unlink()"><span class="kalpna-icon" [innerHTML]="icon('unlink')"></span></button>
+          }
+          @case ('image') {
+            <button type="button" class="kalpna-btn" [class.kalpna-on]="selectedImageStyle === 'inline'" [title]="t('imageInline')" (click)="setImageStyle('inline')"><span class="kalpna-icon" [innerHTML]="icon('imgInline')"></span></button>
+            <button type="button" class="kalpna-btn" [class.kalpna-on]="selectedImageStyle === 'alignLeft'" [title]="t('imageLeft')" (click)="setImageStyle('alignLeft')"><span class="kalpna-icon" [innerHTML]="icon('imgLeft')"></span></button>
+            <button type="button" class="kalpna-btn" [class.kalpna-on]="selectedImageStyle === 'alignCenter'" [title]="t('imageCenter')" (click)="setImageStyle('alignCenter')"><span class="kalpna-icon" [innerHTML]="icon('imgCenter')"></span></button>
+            <button type="button" class="kalpna-btn" [class.kalpna-on]="selectedImageStyle === 'alignRight'" [title]="t('imageRight')" (click)="setImageStyle('alignRight')"><span class="kalpna-icon" [innerHTML]="icon('imgRight')"></span></button>
+            <button type="button" class="kalpna-btn" [class.kalpna-on]="selectedImageStyle === 'blockLeft'" [title]="t('imageSideLeft')" (click)="setImageStyle('blockLeft')"><span class="kalpna-icon" [innerHTML]="icon('alignLeft')"></span></button>
+            <button type="button" class="kalpna-btn" [class.kalpna-on]="selectedImageStyle === 'blockRight'" [title]="t('imageSideRight')" (click)="setImageStyle('blockRight')"><span class="kalpna-icon" [innerHTML]="icon('alignRight')"></span></button>
+            <span class="kalpna-sep"></span>
+            <div class="kalpna-dd">
+              <button type="button" class="kalpna-btn kalpna-btn-text" [title]="t('imageResize')" (click)="toggleMenu('imgResize', $event)">
+                <span class="kalpna-icon" [innerHTML]="icon('resize')"></span>{{ selectedImageWidth || t('original') }}<span class="kalpna-icon kalpna-caret" [innerHTML]="icon('caret')"></span>
+              </button>
+              @if (openMenu === 'imgResize') {
+                <div class="kalpna-panel" style="min-width: 110px">
+                  <button type="button" class="kalpna-item" [class.kalpna-on]="!selectedImageWidth" (click)="resizeImage('')">{{ t('original') }}</button>
+                  @for (w of imageResizePresets; track w) {
+                    <button type="button" class="kalpna-item" [class.kalpna-on]="selectedImageWidth === w" (click)="resizeImage(w)">{{ w }}</button>
+                  }
+                </div>
+              }
+            </div>
+            <button type="button" class="kalpna-btn" [title]="t('imageAlt')" (click)="openAltDialog()"><span class="kalpna-icon" [innerHTML]="icon('altText')"></span></button>
+            <button type="button" class="kalpna-btn" [class.kalpna-on]="selectedHasCaption" [title]="t('imageCaption')" (click)="toggleCaption()"><span class="kalpna-icon" [innerHTML]="icon('caption')"></span></button>
+            <button type="button" class="kalpna-btn" [title]="t('linkImage')" (click)="openLinkDialog(true)"><span class="kalpna-icon" [innerHTML]="icon('link')"></span></button>
+            <button type="button" class="kalpna-btn" [title]="t('replaceImage')" (click)="triggerImageUpload(true)"><span class="kalpna-icon" [innerHTML]="icon('upload')"></span></button>
+            <button type="button" class="kalpna-btn" [title]="t('remove')" (click)="removeSelected()"><span class="kalpna-icon" [innerHTML]="icon('delete')"></span></button>
+          }
+          @case ('media') {
+            <span class="kalpna-balloon-label">{{ t('mediaEmbed') }}</span>
+            <button type="button" class="kalpna-btn" [title]="t('remove')" (click)="removeSelected()"><span class="kalpna-icon" [innerHTML]="icon('delete')"></span></button>
+          }
+          @case ('code') {
+            <span class="kalpna-balloon-label">{{ t('codeLanguage') }}</span>
+            <div class="kalpna-dd">
+              <button type="button" class="kalpna-btn kalpna-btn-text" (click)="toggleMenu('codeLang', $event)">
+                {{ codeLanguageLabel(currentLanguage) }}<span class="kalpna-icon kalpna-caret" [innerHTML]="icon('caret')"></span>
+              </button>
+              @if (openMenu === 'codeLang') {
+                <div class="kalpna-panel">
+                  @for (l of codeLanguages; track l.language) {
+                    <button type="button" class="kalpna-item" [class.kalpna-on]="currentLanguage === l.language" (click)="setCodeLanguage(l.language)">{{ l.label }}</button>
+                  }
+                </div>
+              }
+            </div>
+          }
+          @case ('table') {
+            <div class="kalpna-dd">
+              <button type="button" class="kalpna-btn" [title]="t('tableColumn')" (click)="toggleMenu('tblCol', $event)">
+                <span class="kalpna-icon" [innerHTML]="icon('tableCol')"></span><span class="kalpna-icon kalpna-caret" [innerHTML]="icon('caret')"></span>
+              </button>
+              @if (openMenu === 'tblCol') {
+                <div class="kalpna-panel">
+                  <button type="button" class="kalpna-item" [class.kalpna-on]="hasHeaderCol" (click)="tableAction('headerCol')">{{ hasHeaderCol ? '✓ ' : '' }}{{ t('headerColumn') }}</button>
+                  <div class="kalpna-item-sep"></div>
+                  <button type="button" class="kalpna-item" (click)="tableAction('colLeft')">{{ t('insertColLeft') }}</button>
+                  <button type="button" class="kalpna-item" (click)="tableAction('colRight')">{{ t('insertColRight') }}</button>
+                  <button type="button" class="kalpna-item" (click)="tableAction('deleteCol')">{{ t('deleteColumn') }}</button>
+                </div>
+              }
+            </div>
+            <div class="kalpna-dd">
+              <button type="button" class="kalpna-btn" [title]="t('tableRow')" (click)="toggleMenu('tblRow', $event)">
+                <span class="kalpna-icon" [innerHTML]="icon('tableRow')"></span><span class="kalpna-icon kalpna-caret" [innerHTML]="icon('caret')"></span>
+              </button>
+              @if (openMenu === 'tblRow') {
+                <div class="kalpna-panel">
+                  <button type="button" class="kalpna-item" [class.kalpna-on]="hasHeaderRow" (click)="tableAction('headerRow')">{{ hasHeaderRow ? '✓ ' : '' }}{{ t('headerRow') }}</button>
+                  <div class="kalpna-item-sep"></div>
+                  <button type="button" class="kalpna-item" (click)="tableAction('rowAbove')">{{ t('insertRowAbove') }}</button>
+                  <button type="button" class="kalpna-item" (click)="tableAction('rowBelow')">{{ t('insertRowBelow') }}</button>
+                  <button type="button" class="kalpna-item" (click)="tableAction('deleteRow')">{{ t('deleteRow') }}</button>
+                </div>
+              }
+            </div>
+            <div class="kalpna-dd">
+              <button type="button" class="kalpna-btn" [title]="t('mergeCells')" (click)="toggleMenu('tblMerge', $event)">
+                <span class="kalpna-icon" [innerHTML]="icon('tableMerge')"></span><span class="kalpna-icon kalpna-caret" [innerHTML]="icon('caret')"></span>
+              </button>
+              @if (openMenu === 'tblMerge') {
+                <div class="kalpna-panel">
+                  <button type="button" class="kalpna-item" [disabled]="!canMerge('up')" (click)="tableAction('mergeUp')">{{ t('mergeUp') }}</button>
+                  <button type="button" class="kalpna-item" [disabled]="!canMerge('right')" (click)="tableAction('mergeRight')">{{ t('mergeRight') }}</button>
+                  <button type="button" class="kalpna-item" [disabled]="!canMerge('down')" (click)="tableAction('mergeDown')">{{ t('mergeDown') }}</button>
+                  <button type="button" class="kalpna-item" [disabled]="!canMerge('left')" (click)="tableAction('mergeLeft')">{{ t('mergeLeft') }}</button>
+                  <div class="kalpna-item-sep"></div>
+                  <button type="button" class="kalpna-item" (click)="tableAction('splitV')">{{ t('splitVertical') }}</button>
+                  <button type="button" class="kalpna-item" (click)="tableAction('splitH')">{{ t('splitHorizontal') }}</button>
+                </div>
+              }
+            </div>
+            <span class="kalpna-sep"></span>
+            <button type="button" class="kalpna-btn" [title]="t('tableProperties')" (click)="openTableProps()"><span class="kalpna-icon" [innerHTML]="icon('tableProps')"></span></button>
+            <button type="button" class="kalpna-btn" [title]="t('cellProperties')" (click)="openCellProps()"><span class="kalpna-icon" [innerHTML]="icon('cellProps')"></span></button>
+            <button type="button" class="kalpna-btn" [class.kalpna-on]="hasCaption" [title]="t('tableCaption')" (click)="tableAction('caption')"><span class="kalpna-icon" [innerHTML]="icon('caption')"></span></button>
+            <button type="button" class="kalpna-btn" [title]="t('deleteTable')" (click)="tableAction('deleteTable')"><span class="kalpna-icon" [innerHTML]="icon('delete')"></span></button>
+          }
+        }
+      </div>
+    }
 
-    <button type="button" class="kalpna-btn" title="Align left" aria-label="Align left"
-      *ngIf="hasToolbarItem('alignLeft')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="applyAlignment('left')">⬅</button>
-    <button type="button" class="kalpna-btn" title="Align center" aria-label="Align center"
-      *ngIf="hasToolbarItem('alignCenter')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="applyAlignment('center')">⬌</button>
-    <button type="button" class="kalpna-btn" title="Align right" aria-label="Align right"
-      *ngIf="hasToolbarItem('alignRight')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="applyAlignment('right')">➡</button>
-    <button type="button" class="kalpna-btn" title="Justify" aria-label="Justify"
-      *ngIf="hasToolbarItem('alignJustify')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="applyAlignment('justify')">☰</button>
+    <!-- image resize handles -->
+    @for (h of handles; track h.h) {
+      <div class="kalpna-resize-handle" [attr.data-h]="h.h" [style.top.px]="h.top" [style.left.px]="h.left" (pointerdown)="onResizeStart($event, h.h)"></div>
+    }
+    @if (resizeLabel) {
+      <div class="kalpna-resize-size" [style.top.px]="resizeLabel.top" [style.left.px]="resizeLabel.left">{{ resizeLabel.text }}</div>
+    }
 
-    <span class="kalpna-sep"></span>
-
-    <button type="button" class="kalpna-btn" title="Bullet list" aria-label="Unordered list"
-      *ngIf="hasToolbarItem('unorderedList')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="insertUnorderedList()">• List</button>
-    <button type="button" class="kalpna-btn" title="Numbered list" aria-label="Ordered list"
-      *ngIf="hasToolbarItem('orderedList')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="insertOrderedList()">1. List</button>
-    <button type="button" class="kalpna-btn" title="Indent" aria-label="Indent"
-      *ngIf="hasToolbarItem('indent')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="indent()">→|</button>
-    <button type="button" class="kalpna-btn" title="Outdent" aria-label="Outdent"
-      *ngIf="hasToolbarItem('outdent')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="outdent()">|←</button>
-    <button type="button" class="kalpna-btn" title="Blockquote" aria-label="Blockquote"
-      *ngIf="hasToolbarItem('blockquote')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="insertBlockquote()">“”</button>
-
-    <span class="kalpna-sep"></span>
-
-    <button type="button" class="kalpna-btn" title="Insert link" aria-label="Insert link"
-      *ngIf="hasToolbarItem('link')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="openLinkDialog()">Link</button>
-    <button type="button" class="kalpna-btn" title="Remove link" aria-label="Remove link"
-      *ngIf="hasToolbarItem('unlink') && isLinkSelected" (mousedown)="$event.preventDefault(); saveSelection()" (click)="unlink()">Unlink</button>
-
-    <button type="button" class="kalpna-btn" title="Insert image (file)" aria-label="Upload image"
-      *ngIf="hasToolbarItem('image')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="triggerImageUpload()">Image</button>
-    <button type="button" class="kalpna-btn" title="Insert image from URL" aria-label="Image from URL"
-      *ngIf="hasToolbarItem('image')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="openImageUrlDialog()">URL</button>
-
-    <button type="button" class="kalpna-btn" title="Insert table" aria-label="Insert table"
-      *ngIf="hasToolbarItem('table')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="toggleTableForm()">Table</button>
-
-    <span class="kalpna-sep"></span>
-
-    <button type="button" class="kalpna-btn" title="Undo" aria-label="Undo"
-      *ngIf="hasToolbarItem('undo')" (mousedown)="$event.preventDefault()" (click)="undo()">↶</button>
-    <button type="button" class="kalpna-btn" title="Redo" aria-label="Redo"
-      *ngIf="hasToolbarItem('redo')" (mousedown)="$event.preventDefault()" (click)="redo()">↷</button>
-    <button type="button" class="kalpna-btn" title="Clear formatting" aria-label="Clear formatting"
-      *ngIf="hasToolbarItem('clear')" (mousedown)="$event.preventDefault(); saveSelection()" (click)="clearFormatting()">Clear</button>
-    <button type="button" class="kalpna-btn" title="Source code" aria-label="Toggle source code"
-      *ngIf="hasToolbarItem('source')"
-      [class.kalpna-btn-active]="isSourceView"
-      (mousedown)="$event.preventDefault()" (click)="toggleSourceCode()">&lt;/&gt;</button>
+    <!-- mentions -->
+    @if (mention) {
+      <div class="kalpna-mentions" role="listbox" [style.top.px]="mention.top" [style.left.px]="mention.left" (mousedown)="$event.preventDefault()">
+        @for (it of mention.items; track it; let i = $index) {
+          <button type="button" class="kalpna-item" role="option" [attr.aria-selected]="i === mention.index" [class.kalpna-active]="i === mention.index" (click)="pickMention(it)">{{ it }}</button>
+        }
+      </div>
+    }
   </div>
 
-  <!-- Table form -->
-  <div class="kalpna-table-form" *ngIf="showTableForm && !readOnly && !disabled">
-    <label>
-      Rows
-      <input type="number" min="1" max="50" [(ngModel)]="tableRows" class="kalpna-input" />
-    </label>
-    <label>
-      Columns
-      <input type="number" min="1" max="20" [(ngModel)]="tableCols" class="kalpna-input" />
-    </label>
-    <button type="button" class="kalpna-btn kalpna-btn-primary" (click)="insertTable()">Insert</button>
-    <button type="button" class="kalpna-btn" (click)="showTableForm = false">Cancel</button>
-    <span class="kalpna-table-ops">
-      <button type="button" class="kalpna-btn" title="Add row" (click)="addTableRow()">+ Row</button>
-      <button type="button" class="kalpna-btn" title="Delete row" (click)="deleteTableRow()">− Row</button>
-      <button type="button" class="kalpna-btn" title="Add column" (click)="addTableColumn()">+ Col</button>
-      <button type="button" class="kalpna-btn" title="Delete column" (click)="deleteTableColumn()">− Col</button>
-      <button type="button" class="kalpna-btn" title="Delete table" (click)="deleteTable()">Delete table</button>
-    </span>
-  </div>
-
-  <!-- Link dialog -->
-  <div class="kalpna-dialog" *ngIf="showLinkDialog" role="dialog" aria-label="Insert link">
-    <label>
-      URL
-      <input type="text" class="kalpna-input" [(ngModel)]="linkUrl" placeholder="https://example.com" />
-    </label>
-    <label class="kalpna-check">
-      <input type="checkbox" [(ngModel)]="linkNewTab" /> Open in new tab
-    </label>
-    <div class="kalpna-dialog-actions">
-      <button type="button" class="kalpna-btn kalpna-btn-primary" (click)="applyLink()">Apply</button>
-      <button type="button" class="kalpna-btn" (click)="cancelLinkDialog()">Cancel</button>
+  <!-- ============================== STATUS BAR ============================== -->
+  @if (importing && !showStatus) {
+    <div class="kalpna-status" aria-live="polite"><span>{{ importMessage }}</span></div>
+  }
+  @if (showStatus) {
+    <div class="kalpna-status" aria-live="polite">
+      @if (importing) { <span style="margin-right:auto">{{ importMessage }}</span> }
+      <span>{{ t('words') }}: {{ words }}</span>
+      <span [class.kalpna-over]="overLimit">{{ t('characters') }}: {{ characters }}@if (config.maxCharacters) { / {{ config.maxCharacters }}}</span>
     </div>
-  </div>
+  }
 
-  <!-- Image URL dialog -->
-  <div class="kalpna-dialog" *ngIf="showImageUrlDialog" role="dialog" aria-label="Insert image from URL">
-    <label>
-      Image URL
-      <input type="text" class="kalpna-input" [(ngModel)]="imageUrl" placeholder="https://example.com/image.png" />
-    </label>
-    <label>
-      Alt text
-      <input type="text" class="kalpna-input" [(ngModel)]="imageAlt" placeholder="Description" />
-    </label>
-    <div class="kalpna-dialog-actions">
-      <button type="button" class="kalpna-btn kalpna-btn-primary" (click)="applyImageFromUrl()">Insert</button>
-      <button type="button" class="kalpna-btn" (click)="cancelImageUrlDialog()">Cancel</button>
+  <input #fileInput type="file" accept="image/*" multiple hidden (change)="onImageFileSelected($event)" />
+  <input #wordInput type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden (change)="onWordFileSelected($event)" />
+
+  <!-- ============================== MODALS ============================== -->
+  @if (modal) {
+    <div class="kalpna-modal-backdrop" (mousedown)="$event.target === $event.currentTarget && closeModal()">
+      <div class="kalpna-modal" [class.kalpna-modal-sm]="modal !== 'preview' && modal !== 'help'" role="dialog" aria-modal="true">
+        @switch (modal) {
+          @case ('link') {
+            <div class="kalpna-modal-head">{{ linkForImage ? t('linkImage') : editingLink ? t('editLink') : t('link') }}
+              <button type="button" class="kalpna-btn" [title]="t('close')" (click)="cancelLinkDialog()"><span class="kalpna-icon" [innerHTML]="icon('close')"></span></button></div>
+            <form class="kalpna-form" (ngSubmit)="applyLink()">
+              <label>{{ t('linkUrl') }}<input class="kalpna-input" name="url" [(ngModel)]="linkUrl" placeholder="https://" autocomplete="url" /></label>
+              @if (linkShowText) {
+                <label>{{ t('linkText') }}<input class="kalpna-input" name="text" [(ngModel)]="linkText" /></label>
+              }
+              <label class="kalpna-inline"><input type="checkbox" name="newtab" [(ngModel)]="linkNewTab" /> {{ t('openInNewTab') }}</label>
+              @if (linkError) { <div class="kalpna-error">{{ linkError }}</div> }
+              <div class="kalpna-actions">
+                @if (editingLink && !linkForImage) {
+                  <button type="button" class="kalpna-btn kalpna-btn-ghost" style="margin-right:auto" (click)="closeModal(); unlink()">{{ t('unlink') }}</button>
+                }
+                <button type="button" class="kalpna-btn kalpna-btn-ghost" (click)="cancelLinkDialog()">{{ t('cancel') }}</button>
+                <button type="submit" class="kalpna-btn kalpna-btn-primary">{{ t('save') }}</button>
+              </div>
+            </form>
+          }
+          @case ('imageUrl') {
+            <div class="kalpna-modal-head">{{ t('imageUrl') }}
+              <button type="button" class="kalpna-btn" [title]="t('close')" (click)="closeModal()"><span class="kalpna-icon" [innerHTML]="icon('close')"></span></button></div>
+            <form class="kalpna-form" (ngSubmit)="applyImageFromUrl()">
+              <label>URL<input class="kalpna-input" name="url" [(ngModel)]="imageUrl" placeholder="https://example.com/image.png" /></label>
+              <label>{{ t('imageAlt') }}<input class="kalpna-input" name="alt" [(ngModel)]="imageAlt" [placeholder]="t('imageAltHint')" /></label>
+              @if (imageError) { <div class="kalpna-error">{{ imageError }}</div> }
+              <div class="kalpna-actions">
+                <button type="button" class="kalpna-btn kalpna-btn-ghost" (click)="closeModal()">{{ t('cancel') }}</button>
+                <button type="submit" class="kalpna-btn kalpna-btn-primary">{{ t('insert') }}</button>
+              </div>
+            </form>
+          }
+          @case ('imageAlt') {
+            <div class="kalpna-modal-head">{{ t('imageAlt') }}
+              <button type="button" class="kalpna-btn" [title]="t('close')" (click)="closeModal()"><span class="kalpna-icon" [innerHTML]="icon('close')"></span></button></div>
+            <form class="kalpna-form" (ngSubmit)="applyAlt()">
+              <label>{{ t('imageAltHint') }}<input class="kalpna-input" name="alt" [(ngModel)]="imageAlt" /></label>
+              <div class="kalpna-actions">
+                <button type="button" class="kalpna-btn kalpna-btn-ghost" (click)="closeModal()">{{ t('cancel') }}</button>
+                <button type="submit" class="kalpna-btn kalpna-btn-primary">{{ t('save') }}</button>
+              </div>
+            </form>
+          }
+          @case ('media') {
+            <div class="kalpna-modal-head">{{ t('mediaEmbed') }}
+              <button type="button" class="kalpna-btn" [title]="t('close')" (click)="closeModal()"><span class="kalpna-icon" [innerHTML]="icon('close')"></span></button></div>
+            <form class="kalpna-form" (ngSubmit)="applyMedia()">
+              <label>{{ t('mediaUrl') }}<input class="kalpna-input" name="url" [(ngModel)]="mediaUrl" placeholder="https://www.youtube.com/watch?v=…" /></label>
+              <div class="kalpna-hint">{{ t('mediaHint') }}</div>
+              @if (mediaError) { <div class="kalpna-error">{{ mediaError }}</div> }
+              <div class="kalpna-actions">
+                <button type="button" class="kalpna-btn kalpna-btn-ghost" (click)="closeModal()">{{ t('cancel') }}</button>
+                <button type="submit" class="kalpna-btn kalpna-btn-primary">{{ t('insert') }}</button>
+              </div>
+            </form>
+          }
+          @case ('pastePlain') {
+            <div class="kalpna-modal-head">{{ t('pastePlainText') }}
+              <button type="button" class="kalpna-btn" [title]="t('close')" (click)="closeModal()"><span class="kalpna-icon" [innerHTML]="icon('close')"></span></button></div>
+            <form class="kalpna-form" (ngSubmit)="applyPlainPaste()">
+              <div class="kalpna-hint">{{ t('pastePlainTextHint') }}</div>
+              <textarea class="kalpna-textarea" name="text" [(ngModel)]="plainText"></textarea>
+              <div class="kalpna-actions">
+                <button type="button" class="kalpna-btn kalpna-btn-ghost" (click)="closeModal()">{{ t('cancel') }}</button>
+                <button type="submit" class="kalpna-btn kalpna-btn-primary">{{ t('insert') }}</button>
+              </div>
+            </form>
+          }
+          @case ('tableProps') {
+            <div class="kalpna-modal-head">{{ t('tableProperties') }}
+              <button type="button" class="kalpna-btn" [title]="t('close')" (click)="closeModal()"><span class="kalpna-icon" [innerHTML]="icon('close')"></span></button></div>
+            <form class="kalpna-form" (ngSubmit)="applyTableProps()">
+              <strong>{{ t('border') }}</strong>
+              <div class="kalpna-grid2">
+                <label>{{ t('borderStyle') }}
+                  <select class="kalpna-select" name="bs" [(ngModel)]="tp.borderStyle">
+                    @for (b of borderStyles; track b) { <option [value]="b">{{ b }}</option> }
+                  </select></label>
+                <label>{{ t('borderWidth') }}<input class="kalpna-input" name="bw" [(ngModel)]="tp.borderWidth" placeholder="1px" /></label>
+                <label>{{ t('borderColor') }}<input type="color" class="kalpna-input kalpna-input-color" name="bc" [(ngModel)]="tp.borderColor" /></label>
+                <label>{{ t('background') }}
+                  <span style="display:flex;gap:4px"><input type="color" class="kalpna-input kalpna-input-color" name="bg" [ngModel]="tp.background || '#ffffff'" (ngModelChange)="tp.background = $event" />
+                  <button type="button" class="kalpna-btn kalpna-btn-ghost" (click)="tp.background = ''">{{ t('none') }}</button></span></label>
+              </div>
+              <div class="kalpna-grid2">
+                <label>{{ t('width') }}<input class="kalpna-input" name="w" [(ngModel)]="tp.width" placeholder="100%" /></label>
+                <label>{{ t('height') }}<input class="kalpna-input" name="h" [(ngModel)]="tp.height" placeholder="auto" /></label>
+              </div>
+              <label>{{ t('tableAlignment') }}
+                <select class="kalpna-select" name="al" [(ngModel)]="tp.align">
+                  <option value="left">{{ t('alignLeft') }}</option>
+                  <option value="center">{{ t('alignCenter') }}</option>
+                  <option value="right">{{ t('alignRight') }}</option>
+                </select></label>
+              <div class="kalpna-actions">
+                <button type="button" class="kalpna-btn kalpna-btn-ghost" (click)="closeModal()">{{ t('cancel') }}</button>
+                <button type="submit" class="kalpna-btn kalpna-btn-primary">{{ t('save') }}</button>
+              </div>
+            </form>
+          }
+          @case ('cellProps') {
+            <div class="kalpna-modal-head">{{ t('cellProperties') }}
+              <button type="button" class="kalpna-btn" [title]="t('close')" (click)="closeModal()"><span class="kalpna-icon" [innerHTML]="icon('close')"></span></button></div>
+            <form class="kalpna-form" (ngSubmit)="applyCellProps()">
+              <strong>{{ t('border') }}</strong>
+              <div class="kalpna-grid2">
+                <label>{{ t('borderStyle') }}
+                  <select class="kalpna-select" name="bs" [(ngModel)]="cp.borderStyle">
+                    @for (b of borderStyles; track b) { <option [value]="b">{{ b }}</option> }
+                  </select></label>
+                <label>{{ t('borderWidth') }}<input class="kalpna-input" name="bw" [(ngModel)]="cp.borderWidth" placeholder="1px" /></label>
+                <label>{{ t('borderColor') }}<input type="color" class="kalpna-input kalpna-input-color" name="bc" [(ngModel)]="cp.borderColor" /></label>
+                <label>{{ t('background') }}
+                  <span style="display:flex;gap:4px"><input type="color" class="kalpna-input kalpna-input-color" name="bg" [ngModel]="cp.background || '#ffffff'" (ngModelChange)="cp.background = $event" />
+                  <button type="button" class="kalpna-btn kalpna-btn-ghost" (click)="cp.background = ''">{{ t('none') }}</button></span></label>
+              </div>
+              <div class="kalpna-grid2">
+                <label>{{ t('width') }}<input class="kalpna-input" name="w" [(ngModel)]="cp.width" placeholder="auto" /></label>
+                <label>{{ t('height') }}<input class="kalpna-input" name="h" [(ngModel)]="cp.height" placeholder="auto" /></label>
+                <label>{{ t('padding') }}<input class="kalpna-input" name="p" [(ngModel)]="cp.padding" placeholder="6px 8px" /></label>
+              </div>
+              <div class="kalpna-grid2">
+                <label>{{ t('horizontalAlign') }}
+                  <select class="kalpna-select" name="ta" [(ngModel)]="cp.textAlign">
+                    <option value="">{{ t('defaultValue') }}</option>
+                    <option value="left">{{ t('alignLeft') }}</option>
+                    <option value="center">{{ t('alignCenter') }}</option>
+                    <option value="right">{{ t('alignRight') }}</option>
+                    <option value="justify">{{ t('alignJustify') }}</option>
+                  </select></label>
+                <label>{{ t('verticalAlign') }}
+                  <select class="kalpna-select" name="va" [(ngModel)]="cp.verticalAlign">
+                    <option value="top">{{ t('top') }}</option>
+                    <option value="middle">{{ t('middle') }}</option>
+                    <option value="bottom">{{ t('bottom') }}</option>
+                  </select></label>
+              </div>
+              <div class="kalpna-actions">
+                <button type="button" class="kalpna-btn kalpna-btn-ghost" (click)="closeModal()">{{ t('cancel') }}</button>
+                <button type="submit" class="kalpna-btn kalpna-btn-primary">{{ t('save') }}</button>
+              </div>
+            </form>
+          }
+          @case ('preview') {
+            <div class="kalpna-modal-head">{{ t('preview') }}
+              <button type="button" class="kalpna-btn" [title]="t('close')" (click)="closeModal()"><span class="kalpna-icon" [innerHTML]="icon('close')"></span></button></div>
+            <div class="kalpna-modal-body kalpna-content" [innerHTML]="previewHtml"></div>
+          }
+          @case ('help') {
+            <div class="kalpna-modal-head">{{ t('help') }}
+              <button type="button" class="kalpna-btn" [title]="t('close')" (click)="closeModal()"><span class="kalpna-icon" [innerHTML]="icon('close')"></span></button></div>
+            <div class="kalpna-modal-body">
+              <table class="kalpna-kbd-table">
+                <tbody>
+                  <tr><td>{{ t('bold') }}</td><td><kbd>Ctrl</kbd>+<kbd>B</kbd></td><td>{{ t('italic') }}</td><td><kbd>Ctrl</kbd>+<kbd>I</kbd></td></tr>
+                  <tr><td>{{ t('underline') }}</td><td><kbd>Ctrl</kbd>+<kbd>U</kbd></td><td>{{ t('strikethrough') }}</td><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd></td></tr>
+                  <tr><td>{{ t('code') }}</td><td><kbd>Ctrl</kbd>+<kbd>E</kbd></td><td>{{ t('link') }}</td><td><kbd>Ctrl</kbd>+<kbd>K</kbd></td></tr>
+                  <tr><td>{{ t('subscript') }}</td><td><kbd>Ctrl</kbd>+<kbd>,</kbd></td><td>{{ t('superscript') }}</td><td><kbd>Ctrl</kbd>+<kbd>.</kbd></td></tr>
+                  <tr><td>{{ t('undo') }}</td><td><kbd>Ctrl</kbd>+<kbd>Z</kbd></td><td>{{ t('redo') }}</td><td><kbd>Ctrl</kbd>+<kbd>Y</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></td></tr>
+                  <tr><td>{{ t('alignLeft') }}</td><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>L</kbd></td><td>{{ t('alignCenter') }}</td><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>E</kbd></td></tr>
+                  <tr><td>{{ t('alignRight') }}</td><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd></td><td>{{ t('alignJustify') }}</td><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>J</kbd></td></tr>
+                  <tr><td>{{ t('findReplace') }}</td><td><kbd>Ctrl</kbd>+<kbd>F</kbd></td><td>{{ t('pastePlainText') }}</td><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>V</kbd></td></tr>
+                  <tr><td>{{ t('indent') }} (list / table)</td><td><kbd>Tab</kbd></td><td>{{ t('outdent') }}</td><td><kbd>Shift</kbd>+<kbd>Tab</kbd></td></tr>
+                  <tr><td>Toolbar</td><td><kbd>Alt</kbd>+<kbd>F10</kbd></td><td>{{ t('help') }}</td><td><kbd>Alt</kbd>+<kbd>0</kbd></td></tr>
+                  <tr><td>{{ t('print') }}</td><td><kbd>Ctrl</kbd>+<kbd>P</kbd></td><td>{{ t('close') }}</td><td><kbd>Esc</kbd></td></tr>
+                </tbody>
+              </table>
+              <p class="kalpna-hint" style="margin-top: 12px">
+                Autoformat: <code># </code> heading, <code>* </code> / <code>- </code> bullets, <code>1. </code> numbers, <code>[] </code> to-do,
+                <code>&gt; </code> quote, <code>```</code> code block, <code>---</code> line, <code>**bold**</code>, <code>*italic*</code>, <code>`code`</code>, <code>~~strike~~</code>.
+                Typing <code>(c)</code> → ©, <code>-&gt;</code> → →, <code>1/2</code> → ½.
+              </p>
+            </div>
+          }
+        }
+      </div>
     </div>
-  </div>
-
-  <input #fileInput type="file" accept="image/*" hidden (change)="onImageFileSelected($event)" />
-
-  <!-- Editor surface -->
-  <div
-    #editor
-    class="kalpna-content"
-    [attr.contenteditable]="!disabled && !readOnly && !isSourceView"
-    [attr.aria-label]="placeholder"
-    [attr.data-placeholder]="placeholder"
-    [style.minHeight]="minHeight"
-    [hidden]="isSourceView"
-    (input)="onEditorInput()"
-    (focus)="onEditorFocus()"
-    (blur)="onEditorBlur()"
-    (mouseup)="onSelectionChange()"
-    (keyup)="onSelectionChange()"
-    (paste)="onPaste($event)"
-    role="textbox"
-    aria-multiline="true"
-  ></div>
-
-  <!-- Source view -->
-  <textarea
-    *ngIf="isSourceView"
-    #sourceArea
-    class="kalpna-source"
-    [style.minHeight]="minHeight"
-    [(ngModel)]="sourceHtml"
-    (input)="onSourceInput()"
-    [disabled]="disabled || readOnly"
-    aria-label="HTML source"
-    spellcheck="false"
-  ></textarea>
+  }
 </div>

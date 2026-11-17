@@ -1,14 +1,20 @@
 {
   "name": "kalpna-angular-editor",
-  "version": "0.1.0",
-  "description": "A lightweight, secure, production-ready Angular rich text editor library with formatting, tables, images, and source mode.",
+  "version": "0.2.0",
+  "description": "A free, secure, CKEditor-style Angular rich text editor: formatting, fonts, colors, lists, to-do lists, tables with merge/split, images with resize/captions, media embeds, code blocks, find & replace, autoformat, mentions, source mode, word count, print and export.",
   "keywords": [
     "angular",
-    "editor",
-    "rich-text",
-    "wysiwyg",
+    "ckeditor-alternative",
     "contenteditable",
-    "kalpna"
+    "editor",
+    "free-editor",
+    "html-editor",
+    "image-resize",
+    "kalpna",
+    "marathi",
+    "rich-text",
+    "tables",
+    "wysiwyg"
   ],
   "author": {
     "name": "Suryakant Ubhe",
@@ -17,19 +23,20 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/simplycodeTech/kalpna-angular-editor.git"
+    "url": "git+https://github.com/simplycodeTech/KalpanaEditor.git"
   },
   "bugs": {
-    "url": "https://github.com/simplycodeTech/kalpna-angular-editor/issues"
+    "url": "https://github.com/simplycodeTech/KalpanaEditor/issues"
   },
-  "homepage": "https://github.com/simplycodeTech/kalpna-angular-editor#readme",
+  "homepage": "https://github.com/simplycodeTech/KalpanaEditor#readme",
   "publishConfig": {
     "access": "public"
   },
   "peerDependencies": {
     "@angular/common": ">=17.0.0 <20.0.0",
     "@angular/core": ">=17.0.0 <20.0.0",
-    "@angular/forms": ">=17.0.0 <20.0.0"
+    "@angular/forms": ">=17.0.0 <20.0.0",
+    "@angular/platform-browser": ">=17.0.0 <20.0.0"
   },
   "dependencies": {
     "tslib": "^2.3.0"

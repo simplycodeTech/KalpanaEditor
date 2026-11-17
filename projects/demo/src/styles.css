@@ -51,3 +51,11 @@ body {
 .preview code {
   white-space: pre-wrap;
 }
+
+.demo-page { max-width: 1100px; }
+.demo-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.demo-head h2 { margin: 0; }
+.demo-head select { margin-left: 6px; height: 28px; }
+.meta { font-size: 12px; color: #6b7280; margin: 8px 0 0; }
+.preview summary { cursor: pointer; }
+.preview .kalpna-content { margin-top: 8px; background: #fff; padding: 12px; }
