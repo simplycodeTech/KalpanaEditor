@@ -8,11 +8,11 @@ import {
   KalpnaEditorConfig,
   KalpnaUploadHook,
   KalpnaWordCount
-} from 'kalpna-angular-editor';
+} from 'kalpna-editor';
 
 const SAMPLE = `
 <h2>Welcome to Kalpna Editor</h2>
-<p>A <strong>free</strong>, <em>CKEditor-style</em> rich text editor for Angular. Try <mark class="marker-yellow">highlighting</mark>,
+<p>A <strong>free</strong>, <em>full-featured</em> rich text editor for Angular. Try <mark class="marker-yellow">highlighting</mark>,
 <span style="color: #1d4ed8">colours</span>, <code>inline code</code>, links like <a href="https://angular.dev" target="_blank" rel="noopener noreferrer">angular.dev</a> and mentions such as <span class="mention" data-mention="@Suryakant">@Suryakant</span>.</p>
 <ul class="todo-list"><li data-checked="true">Bold, italic, underline, strike, sub/superscript</li><li data-checked="false">Tables with merge / split cells</li></ul>
 <table style="border-collapse: collapse; width: 100%"><tbody>
@@ -33,7 +33,7 @@ console.log(editor);</code></pre>
   template: `
     <div class="demo-page">
       <h1>Kalpna Angular Editor</h1>
-      <p class="subtitle">Free, CKEditor-style rich text editor for Angular (forms, upload hook, mentions, Marathi UI).</p>
+      <p class="subtitle">Kalpna Editor — free, full-featured rich text editor for Angular (forms, upload hook, mentions, Marathi UI).</p>
 
       <div class="demo-card">
         <div class="demo-head">

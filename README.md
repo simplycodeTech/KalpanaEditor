@@ -1,21 +1,21 @@
-# kalpna-angular-editor
+# kalpna-editor
 
-A **free, open-source, CKEditor-style rich text editor for Angular**.
+**Kalpna Editor** — a free, open-source, full-featured rich text editor for Angular.
 
 - Contenteditable WYSIWYG editor, no third-party runtime dependencies
-- Covers the CKEditor 5 open-source feature set (and a few of its premium ones)
+- Professional word-processor features: tables, images, media, code blocks, Word import and more
 - Angular reactive & template-driven forms (`ControlValueAccessor`)
 - Built-in HTML sanitizer, English and Marathi UI
 - MIT licensed
 
-**Package name:** `kalpna-angular-editor`  
-**Current version:** `0.2.0`  
+**Package name:** `kalpna-editor`  
+**Current version:** `1.0.1`  
 **Supported Angular:** 17.x – 19.x  
 **Node.js:** 18+ recommended
 
 ---
 
-## Features (CKEditor comparison)
+## Features
 
 | Area | Features |
 |------|----------|
@@ -35,14 +35,14 @@ A **free, open-source, CKEditor-style rich text editor for Angular**.
 | View | Source editing, show blocks, preview, fullscreen, print, export to Word (`.doc`), export to PDF (via print dialog), keyboard-shortcut help |
 | Editor | Undo / redo with caret restore, sticky toolbar, configurable toolbar order with separators, word & character count, character limit, autosave output, read-only & disabled modes, placeholder, i18n (English / मराठी / custom labels) |
 
-**Not included** (these are commercial / server-side CKEditor services): real-time collaboration, track changes, comments, revision history, AI assistant, server-side DOCX/PDF conversion, CKBox / CKFinder file manager.
+**Not included yet:** real-time collaboration, track changes, comments, revision history, server-side DOCX/PDF conversion, file manager.
 
 ---
 
 ## Installation
 
 ```bash
-npm install kalpna-angular-editor
+npm install kalpna-editor
 ```
 
 Peer dependencies: `@angular/common`, `@angular/core`, `@angular/forms`, `@angular/platform-browser`.
@@ -54,7 +54,7 @@ Peer dependencies: `@angular/common`, `@angular/core`, `@angular/forms`, `@angul
 ```typescript
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { KalpnaEditorComponent } from 'kalpna-angular-editor';
+import { KalpnaEditorComponent } from 'kalpna-editor';
 
 @Component({
   selector: 'app-example',
@@ -81,7 +81,7 @@ body = new FormControl('<p></p>');
 ## Configuration
 
 ```typescript
-import { KalpnaEditorConfig } from 'kalpna-angular-editor';
+import { KalpnaEditorConfig } from 'kalpna-editor';
 
 config: KalpnaEditorConfig = {
   language: 'mr',                    // 'en' (default) | 'mr'
@@ -179,10 +179,10 @@ Without a hook, images are embedded as base64 (`imageUploadMode: 'base64'`, defa
 
 ## Showing saved content
 
-Saved HTML uses CKEditor-like classes (`figure.image`, `image-style-align-left`, `todo-list`, `marker-yellow`, `page-break`, `mention` …). To render it outside the editor with the same look, add the content stylesheet once and wrap the HTML in `.kalpna-content`:
+Saved HTML uses a few semantic classes (`figure.image`, `image-style-align-left`, `todo-list`, `marker-yellow`, `page-break`, `mention` …). To render it outside the editor with the same look, add the content stylesheet once and wrap the HTML in `.kalpna-content`:
 
 ```typescript
-import { KALPNA_CONTENT_CSS } from 'kalpna-angular-editor';
+import { KALPNA_CONTENT_CSS } from 'kalpna-editor';
 // e.g. inject once: document.head.insertAdjacentHTML('beforeend', `<style>${KALPNA_CONTENT_CSS}</style>`)
 ```
 ```html
@@ -234,7 +234,7 @@ npm install
 npm run build:lib     # build the library
 npm start             # run the demo app
 npm test              # unit tests
-npm run pack:lib      # → dist/kalpna-angular-editor/kalpna-angular-editor-0.2.0.tgz
+npm run pack:lib      # → dist/kalpna-editor/kalpna-editor-1.0.1.tgz
 ```
 
 ---

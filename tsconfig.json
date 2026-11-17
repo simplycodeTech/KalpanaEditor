@@ -17,7 +17,7 @@
     "module": "ES2022",
     "lib": ["ES2022", "dom"],
     "paths": {
-      "kalpna-angular-editor": [
+      "kalpna-editor": [
         "./projects/kalpna-angular-editor/src/public-api.ts"
       ]
     }

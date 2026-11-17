@@ -74,7 +74,7 @@ export type KalpnaToolbarItem =
   | 'help'
   | '|';
 
-/** CKEditor-like full toolbar (default). */
+/** Full toolbar (default). */
 export const DEFAULT_TOOLBAR: KalpnaToolbarItem[] = [
   'undo', 'redo', '|',
   'heading', 'fontFamily', 'fontSize', '|',
@@ -94,7 +94,7 @@ export const BASIC_TOOLBAR: KalpnaToolbarItem[] = [
   'link', 'image', 'table', '|', 'unorderedList', 'orderedList', '|', 'alignment', 'clear'
 ];
 
-/** A mention feed (CKEditor-style `@mentions`, `#tags`). */
+/** A mention feed (`@mentions`, `#tags`). */
 export interface KalpnaMentionFeed {
   /** Single character that opens the feed, e.g. `'@'` or `'#'`. */
   marker: string;

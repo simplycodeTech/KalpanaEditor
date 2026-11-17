@@ -1,8 +1,17 @@
 # Changelog
 
+## 1.0.1 (2026-11)
+
+- Published as **`kalpna-editor`** (`npm i kalpna-editor`). Replaces the old 0.0.x `kalpna-editor` package and `kalpna-angular-editor` 0.2.x.
+- Import path is now `kalpna-editor`.
+
+## 0.2.1 (2026-11)
+
+- Include README and LICENSE in the npm package
+
 ## 0.2.0 (2026-11)
 
-### CKEditor-style feature set
+### Full-featured editor
 
 - New toolbar (Material icons, dropdowns, split buttons, sticky, configurable order with `'|'` separators, `DEFAULT_TOOLBAR` / `BASIC_TOOLBAR` presets)
 - Subscript, superscript, inline code, highlight markers/pens, font background colour with palette, line height, change case, format painter

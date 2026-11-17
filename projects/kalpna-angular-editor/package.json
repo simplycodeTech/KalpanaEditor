@@ -1,20 +1,23 @@
 {
-  "name": "kalpna-angular-editor",
-  "version": "0.2.0",
-  "description": "A free, secure, CKEditor-style Angular rich text editor: formatting, fonts, colors, lists, to-do lists, tables with merge/split, images with resize/captions, media embeds, code blocks, find & replace, autoformat, mentions, source mode, word count, print and export.",
+  "name": "kalpna-editor",
+  "version": "1.0.1",
+  "description": "Kalpna Editor — a free, secure, full-featured Angular rich text editor: formatting, fonts, colors, lists, to-do lists, tables with merge/split, images with resize/captions, media embeds, code blocks, Word (.docx) import, find & replace, autoformat, mentions, source mode, word count, print and export.",
   "keywords": [
     "angular",
-    "ckeditor-alternative",
     "contenteditable",
+    "docx",
     "editor",
     "free-editor",
     "html-editor",
     "image-resize",
     "kalpna",
+    "kalpna-editor",
     "marathi",
     "rich-text",
     "tables",
-    "wysiwyg"
+    "word-import",
+    "wysiwyg",
+    "wysiwyg-editor"
   ],
   "author": {
     "name": "Suryakant Ubhe",

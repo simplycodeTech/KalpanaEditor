@@ -837,7 +837,7 @@ export class KalpnaEditorComponent implements OnInit, OnChanges, AfterViewInit, 
     });
   }
 
-  /** Insert a block-level element at the caret (after the current block), CKEditor-style. */
+  /** Insert a block-level element at the caret (after the current block). */
   private insertBlock(el: HTMLElement, caretInside?: Node): void {
     this.focusAndRestore();
     const r = this.getRange();

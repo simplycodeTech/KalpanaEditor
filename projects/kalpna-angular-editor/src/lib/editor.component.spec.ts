@@ -191,7 +191,7 @@ describe('KalpnaEditorComponent (0.2 features)', () => {
     fixture.detectChanges();
   });
 
-  it('renders the full CKEditor-style toolbar by default', () => {
+  it('renders the full toolbar by default', () => {
     const el: HTMLElement = fixture.nativeElement;
     expect(el.querySelector('button[aria-label="Bold"]')).toBeTruthy();
     expect(el.querySelector('button[title="Insert table"]')).toBeTruthy();

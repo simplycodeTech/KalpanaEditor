@@ -1,5 +1,5 @@
 /*
- * Public API surface of kalpna-angular-editor
+ * Public API surface of kalpna-editor
  */
 
 export * from './lib/editor.component';

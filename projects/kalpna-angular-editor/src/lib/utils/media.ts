@@ -1,4 +1,4 @@
-/** Media embed providers (CKEditor "media embed" equivalent). */
+/** Media embed providers (YouTube, Vimeo, …). */
 export interface KalpnaMediaInfo {
   provider: string;
   embedUrl: string;

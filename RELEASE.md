@@ -1,9 +1,9 @@
-# NPM Release Checklist — kalpna-angular-editor
+# NPM Release Checklist — kalpna-editor
 
 **npm account:** [spubhe](https://www.npmjs.com/~spubhe)  
-**Package name:** `kalpna-angular-editor`  
+**Package name:** `kalpna-editor`  
 **GitHub:** https://github.com/simplycodeTech/KalpanaEditor  
-**Current version:** `0.2.0`
+**Current version:** `1.0.0`
 
 ---
 
@@ -11,7 +11,7 @@
 
 ```bash
 git add -A
-git commit -m "Release 0.2.0: CKEditor-style features and Word import"
+git commit -m "Release 1.0.0: Kalpna Editor"
 git push origin main
 ```
 
@@ -24,7 +24,7 @@ npm install
 npm run build:lib
 npm test
 npm run pack:lib
-tar -tzf dist/kalpna-angular-editor/kalpna-angular-editor-0.2.0.tgz
+tar -tzf dist/kalpna-editor/kalpna-editor-1.0.0.tgz
 ```
 
 The tarball must contain only `package.json`, `README.md`, `index.d.ts`, `fesm2022/…` and `lib/…` typings.
@@ -33,7 +33,7 @@ The tarball must contain only `package.json`, `README.md`, `index.d.ts`, `fesm20
 
 ```bash
 npm whoami                 # must print: spubhe  (otherwise: npm login)
-cd dist/kalpna-angular-editor
+cd dist/kalpna-editor
 npm publish --access public
 cd ../..
 ```
@@ -43,17 +43,17 @@ Never commit an `.npmrc` containing `_authToken`.
 ## 4. Tag the release
 
 ```bash
-git tag v0.2.0
-git push origin v0.2.0
+git tag v1.0.0
+git push origin v1.0.0
 ```
 
 ## 5. Verify
 
 ```bash
-npm view kalpna-angular-editor version     # → 0.2.0
+npm view kalpna-editor version     # → 1.0.0
 ```
 
-Then, in any Angular 17–19 app: `npm install kalpna-angular-editor`.
+Then, in any Angular 17–19 app: `npm install kalpna-editor`.
 
 ## Next releases
 
