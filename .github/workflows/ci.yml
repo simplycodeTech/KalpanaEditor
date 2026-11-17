@@ -34,4 +34,4 @@ jobs:
         run: npm run pack:lib
 
       - name: List package contents
-        run: tar -tzf dist/kalpna-angular-editor/*.tgz | head -80
+        run: tar -tzf dist/kalpna-editor/*.tgz | head -80
