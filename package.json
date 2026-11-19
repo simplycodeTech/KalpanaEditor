@@ -12,7 +12,10 @@
     "test": "ng test kalpna-angular-editor --no-watch --browsers=ChromeHeadless",
     "test:demo": "ng test demo --no-watch --browsers=ChromeHeadless",
     "lint": "ng lint",
-    "pack:lib": "cd dist/kalpna-editor && npm pack"
+    "pack:lib": "cd dist/kalpna-editor && npm pack",
+    "build:elements": "ng build elements && node scripts/bundle-elements.mjs",
+    "build:all": "npm run build:lib && npm run build:elements",
+    "publish:lib": "npm run build:all && npm publish ./dist/kalpna-editor --access public"
   },
   "dependencies": {
     "@angular/animations": "^19.2.0",
@@ -31,6 +34,7 @@
     "@angular-devkit/build-angular": "^19.2.14",
     "@angular/cli": "^19.2.14",
     "@angular/compiler-cli": "^19.2.0",
+    "@angular/elements": "~19.2.0",
     "@types/jasmine": "~5.1.0",
     "jasmine-core": "~5.6.0",
     "karma": "~6.4.0",

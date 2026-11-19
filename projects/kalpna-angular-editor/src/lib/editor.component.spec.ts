@@ -3,6 +3,7 @@ import { KalpnaEditorComponent } from './editor.component';
 import { sanitizeHtml, isSafeUrl, normalizeLinkUrl, sanitizePastedHtml } from './utils/sanitize';
 import { parseMediaUrl } from './utils/media';
 import * as T from './utils/table';
+import { suggest, toDevanagari } from './utils/transliterate';
 
 describe('KalpnaEditorComponent', () => {
   let component: KalpnaEditorComponent;
@@ -214,5 +215,39 @@ describe('KalpnaEditorComponent (0.2 features)', () => {
     component.setHtml('<p>x</p>');
     (fixture.nativeElement.querySelector('.kalpna-content p') as HTMLElement).classList.add('kalpna-selected');
     expect(component.getHtml()).toBe('<p>x</p>');
+  });
+});
+
+describe('Marathi transliteration', () => {
+  it('applies phonetic rules', () => {
+    expect(toDevanagari('kaam')).toBe('काम');
+    expect(toDevanagari('sant')).toBe('संत');
+    expect(toDevanagari('janm')).toBe('जन्म');
+    expect(toDevanagari('shala')).toBe('शला');
+    expect(toDevanagari('nahi')).toBe('नही');
+    expect(toDevanagari('dnyan')).toBe('ज्ञन');
+    expect(toDevanagari('kshatriya')).toBe('क्षत्रिया');
+  });
+
+  it('ranks dictionary words first', () => {
+    expect(suggest('namaskar')[0]).toBe('नमस्कार');
+    expect(suggest('maharashtra')[0]).toBe('महाराष्ट्र');
+    expect(suggest('shala')[0]).toBe('शाळा');
+    expect(suggest('marathi')[0]).toBe('मराठी');
+    expect(suggest('computer')[0]).toBe('कॉम्प्युटर');
+    expect(suggest('grampanchayat')).toContain('ग्रामपंचायत');
+  });
+
+  it('supports Hindi', () => {
+    expect(suggest('namaste', { lang: 'hi' })[0]).toBe('नमस्ते');
+    expect(suggest('nahi', { lang: 'hi' })[0]).toBe('नहीं');
+    expect(suggest('kaise', { lang: 'hi' })[0]).toBe('कैसे');
+    expect(suggest('nahi', { lang: 'mr' })[0]).toBe('नाही');
+    expect(toDevanagari('kaLa', 'hi')).toBe('कला');
+    expect(toDevanagari('kaLa', 'mr')).toBe('कळा');
+  });
+
+  it('prefers learned / custom words', () => {
+    expect(suggest('simplycode', { custom: { simplycode: 'सिंपलीकोड' } })[0]).toBe('सिंपलीकोड');
   });
 });

@@ -36,6 +36,7 @@ import {
   KalpnaLabels,
   KalpnaMentionFeed,
   KalpnaToolbarItem,
+  KalpnaTransliterationConfig,
   KalpnaUploadHook,
   KalpnaWordCount
 } from './editor.types';
@@ -44,6 +45,7 @@ import { KALPNA_ICONS } from './utils/icons';
 import { EMOJI_CATEGORIES, KalpnaCharCategory, SPECIAL_CHARACTERS } from './utils/special-characters';
 import { buildMediaHtml, parseMediaUrl } from './utils/media';
 import { convertDocx, DOCX_IMAGE_PREFIX } from './utils/docx';
+import { suggest as translitSuggest, KalpnaTypingLanguage } from './utils/transliterate';
 import * as T from './utils/table';
 import { KALPNA_CONTENT_CSS, KALPNA_EDITOR_CSS } from './editor.styles';
 
@@ -84,6 +86,7 @@ const SIMPLE_BUTTONS: Partial<Record<KalpnaToolbarItem, SimpleButton>> = {
   image: { icon: 'image', label: 'image' },
   imageUrl: { icon: 'imageUrl', label: 'imageUrl' },
   importWord: { icon: 'importWord', label: 'importWord' },
+  transliteration: { icon: 'transliteration', label: 'transliteration', shortcut: 'Alt+M' },
   mediaEmbed: { icon: 'mediaEmbed', label: 'mediaEmbed' },
   findReplace: { icon: 'findReplace', label: 'findReplace', shortcut: 'Ctrl+F' },
   selectAll: { icon: 'selectAll', label: 'selectAll', shortcut: 'Ctrl+A' },
@@ -284,6 +287,26 @@ export class KalpnaEditorComponent implements OnInit, OnChanges, AfterViewInit, 
   // mentions
   mention: { items: string[]; index: number; top: number; left: number; feed: KalpnaMentionFeed; node: Text; start: number; end: number } | null = null;
 
+  // Marathi transliteration
+  /** Current typing language: English, Marathi or Hindi. */
+  typingLang: 'en' | KalpnaTypingLanguage = 'en';
+  get translitOn(): boolean {
+    return this.typingLang !== 'en';
+  }
+  readonly typingOptions: { code: 'en' | KalpnaTypingLanguage; glyph: string; name: string }[] = [
+    { code: 'en', glyph: 'A', name: 'English' },
+    { code: 'mr', glyph: 'म', name: 'मराठी' },
+    { code: 'hi', glyph: 'हि', name: 'हिंदी' }
+  ];
+  get visibleTypingOptions() {
+    const allowed = this.translitConfig.languages;
+    return allowed?.length ? this.typingOptions.filter((o) => allowed.includes(o.code)) : this.typingOptions;
+  }
+  translit: { latin: string; items: string[]; index: number; top: number; left: number; node: Text; start: number } | null = null;
+  private translitSkip = '';
+  private learned: Record<string, Record<string, string>> = { mr: {}, hi: {} };
+  private translitConfigured = false;
+
   // word import
   importing = false;
   importMessage = '';
@@ -400,6 +423,34 @@ export class KalpnaEditorComponent implements OnInit, OnChanges, AfterViewInit, 
     }
     while (cleaned[cleaned.length - 1] === '|') cleaned.pop();
     this.activeToolbar = cleaned;
+    if (!this.translitConfigured && this.isBrowser) {
+      this.translitConfigured = true;
+      const read = (k: string) => {
+        try {
+          return JSON.parse(localStorage.getItem(k) || '{}') as Record<string, string>;
+        } catch {
+          return {};
+        }
+      };
+      this.learned = { mr: read('kalpna-translit-learned'), hi: read('kalpna-translit-learned-hi') };
+      let stored: 'en' | KalpnaTypingLanguage | null = null;
+      try {
+        const v = localStorage.getItem('kalpna-typing-lang');
+        if (v === 'en' || v === 'mr' || v === 'hi') stored = v;
+        else {
+          const old = localStorage.getItem('kalpna-translit-on');
+          stored = old === null ? null : old === '1' ? 'mr' : 'en';
+        }
+      } catch {
+        stored = null;
+      }
+      const tc = this.translitConfig;
+      this.typingLang = tc.language ?? (tc.enabled === true ? 'mr' : tc.enabled === false ? 'en' : null) ?? stored ?? 'en';
+    } else if (this.translitConfigured) {
+      const tc = this.translitConfig;
+      if (tc.language) this.typingLang = tc.language;
+      else if (tc.enabled !== undefined) this.typingLang = tc.enabled ? (this.typingLang === 'hi' ? 'hi' : 'mr') : 'en';
+    }
     if (!this.placeholder) this.placeholder = cfg.placeholder ?? this.labels['placeholder'] ?? '';
     else if (cfg.placeholder) this.placeholder = cfg.placeholder;
   }
@@ -544,6 +595,7 @@ export class KalpnaEditorComponent implements OnInit, OnChanges, AfterViewInit, 
       case 'showBlocks': return this.showBlocks;
       case 'findReplace': return this.showFind;
       case 'formatPainter': return !!this.painter;
+      case 'transliteration': return this.translitOn;
       case 'alignLeft': case 'alignCenter': case 'alignRight': case 'alignJustify':
         return this.currentAlign === item.replace('align', '').toLowerCase();
       default: return !!this.on[item];
@@ -650,6 +702,7 @@ export class KalpnaEditorComponent implements OnInit, OnChanges, AfterViewInit, 
       case 'imageUrl': this.openImageUrlDialog(); break;
       case 'mediaEmbed': this.openMediaDialog(); break;
       case 'importWord': this.triggerWordImport(); break;
+      case 'transliteration': this.cycleTypingLanguage(); break;
       case 'table': this.insertTable(this.tableRows, this.tableCols); break;
       case 'findReplace': this.toggleFind(); break;
       case 'selectAll': this.selectAll(); break;
@@ -1007,6 +1060,7 @@ export class KalpnaEditorComponent implements OnInit, OnChanges, AfterViewInit, 
     }
     this.afterChange(typing);
     this.checkMention();
+    this.updateTranslit();
   }
 
   onEditorFocus(): void {
@@ -1033,6 +1087,7 @@ export class KalpnaEditorComponent implements OnInit, OnChanges, AfterViewInit, 
     this.savedRange = r.cloneRange();
     this.updateToolbarState();
     if (this.mention && (!r.collapsed || r.startContainer !== this.mention.node)) this.mention = null;
+    if (this.translit && (!r.collapsed || r.startContainer !== this.translit.node || r.startOffset !== this.translit.start + this.translit.latin.length)) this.translit = null;
     this.cdr.markForCheck();
   }
 
@@ -1115,6 +1170,39 @@ export class KalpnaEditorComponent implements OnInit, OnChanges, AfterViewInit, 
         this.cdr.markForCheck();
         return;
       }
+    }
+
+    // Marathi transliteration suggestions
+    if (this.translit && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      const t = this.translit;
+      const total = t.items.length + 1; // + "English"
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        t.index = (t.index + (event.key === 'ArrowDown' ? 1 : total - 1)) % total;
+        this.cdr.markForCheck();
+        return;
+      }
+      if (event.key === 'Enter' || event.key === 'Tab') {
+        event.preventDefault();
+        this.pickTranslit(t.index);
+        return;
+      }
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        this.translitSkip = `${t.start}:${t.latin}`;
+        this.translit = null;
+        this.cdr.markForCheck();
+        return;
+      }
+      const isUrlish = /^(www|http|https|ftp)$/i.test(t.latin);
+      if (event.key === ' ' || (/^[,?!;:)\]}"।]$/.test(event.key)) || (event.key === '.' && !isUrlish)) {
+        this.pickTranslit(t.index); // the typed key is then inserted normally
+      }
+    }
+    if (event.altKey && !event.ctrlKey && (event.key === 'm' || event.key === 'M')) {
+      event.preventDefault();
+      this.cycleTypingLanguage();
+      return;
     }
 
     // selected image / media / page break
@@ -1255,7 +1343,7 @@ export class KalpnaEditorComponent implements OnInit, OnChanges, AfterViewInit, 
     if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
     const target = event.target as HTMLElement;
     if (target.closest('.kalpna-panel')) return;
-    const buttons = Array.from(this.toolbarEl?.nativeElement.querySelectorAll<HTMLElement>(':scope > .kalpna-btn, :scope > .kalpna-dd > .kalpna-btn, :scope > .kalpna-dd > .kalpna-row > .kalpna-btn') ?? []).filter((b) => !(b as HTMLButtonElement).disabled);
+    const buttons = Array.from(this.toolbarEl?.nativeElement.querySelectorAll<HTMLElement>(':scope > .kalpna-btn, :scope > .kalpna-dd > .kalpna-btn, :scope > .kalpna-dd > .kalpna-row > .kalpna-btn, :scope > .kalpna-lang-switch > .kalpna-lang-opt') ?? []).filter((b) => !(b as HTMLButtonElement).disabled);
     const i = buttons.indexOf(target);
     if (i === -1) return;
     event.preventDefault();
@@ -1456,6 +1544,39 @@ export class KalpnaEditorComponent implements OnInit, OnChanges, AfterViewInit, 
       this.exec('fontName', family, true);
     }
     this.currentFont = family;
+    // Choosing a Devanagari font switches typing to Marathi (and a Latin font back to English).
+    if (family && this.translitConfig.followFont !== false && this.hasToolbarItem('transliteration') || (family && this.translitConfig.followFont === true)) {
+      const dev = this.isDevanagariFont(family);
+      if (dev && !this.translitOn) this.setTypingLanguage(this.translitConfig.fontLanguage ?? 'mr');
+      else if (!dev && this.translitOn) this.setTypingLanguage('en');
+    }
+  }
+
+  /** True for fonts that are meant for Devanagari / Marathi text. */
+  isDevanagariFont(family: string): boolean {
+    const extra = (this.translitConfig.devanagariFonts ?? []).map((f) => f.toLowerCase());
+    const f = family.toLowerCase().replace(/["']/g, '').trim();
+    return extra.includes(f) || /devanagari|marathi|mangal|mukta|hind|kokila|aparajita|utsaah|kruti|shivaji|yatra|baloo|tiro|kalam|sahitya|martel|laila|rozha|karma|amita|sarala|eczar|khand|rajdhani|sanskrit|lohit|gargi|kalimati|annapurna|shree|akshar/.test(f);
+  }
+
+  setTypingLanguage(lang: 'en' | 'mr' | 'hi'): void {
+    this.openMenu = null;
+    this.typingLang = lang;
+    this.translit = null;
+    try {
+      localStorage.setItem('kalpna-typing-lang', lang);
+    } catch {
+      /* ignore */
+    }
+    this.focusAndRestore();
+    this.cdr.markForCheck();
+  }
+
+  /** Cycle English → मराठी → हिंदी (Alt+M). */
+  cycleTypingLanguage(): void {
+    const opts = this.visibleTypingOptions.map((o) => o.code);
+    const i = opts.indexOf(this.typingLang);
+    this.setTypingLanguage(opts[(i + 1) % opts.length] ?? 'en');
   }
 
   applyFontSize(size: string): void {
@@ -2500,6 +2621,111 @@ export class KalpnaEditorComponent implements OnInit, OnChanges, AfterViewInit, 
     if (!this.resizing) return;
     this.resizing = null;
     this.resizeLabel = null;
+    this.afterChange();
+  }
+
+  // ===================================================================
+  // Marathi transliteration
+  // ===================================================================
+
+  private get translitConfig(): KalpnaTransliterationConfig {
+    const c = this.config?.transliteration;
+    if (c === true) return { enabled: true };
+    if (c === false || c === undefined) return {};
+    return c;
+  }
+
+  /** Legacy on/off switch: on = the last Indian language (Marathi by default). */
+  toggleTransliteration(force?: boolean): void {
+    const on = force ?? !this.translitOn;
+    this.setTypingLanguage(on ? (this.typingLang !== 'en' ? this.typingLang : 'mr') : 'en');
+  }
+
+  private updateTranslit(): void {
+    if (!this.translitOn || this.isSourceView) {
+      if (this.translit) this.translit = null;
+      return;
+    }
+    const r = this.getRange();
+    const close = () => {
+      if (this.translit) {
+        this.translit = null;
+        this.cdr.markForCheck();
+      }
+    };
+    if (!r || !r.collapsed || r.startContainer.nodeType !== Node.TEXT_NODE || this.closestInEditor('pre, code, .mention', r.startContainer)) return close();
+    const node = r.startContainer as Text;
+    const before = node.data.slice(0, r.startOffset);
+    if (/^[A-Za-z]/.test(node.data.slice(r.startOffset))) return close();
+    const m = before.match(/(^|[^A-Za-z0-9@#\/\\:._\-'’])([A-Za-z]{1,40})$/);
+    if (!m) return close();
+    const latin = m[2];
+    const start = r.startOffset - latin.length;
+    if (this.translitSkip === `${start}:${latin}`) return close();
+    this.translitSkip = '';
+    const lang = this.typingLang === 'hi' ? 'hi' : 'mr';
+    const items = translitSuggest(latin, { custom: { ...this.learned[lang], ...(this.translitConfig.dictionary ?? {}) }, max: 5, lang });
+    const wordRange = this.doc.createRange();
+    wordRange.setStart(node, start);
+    wordRange.setEnd(node, start + 1);
+    const rect = wordRange.getBoundingClientRect();
+    const fallback = node.parentElement?.getBoundingClientRect();
+    const body = this.bodyRef.nativeElement.getBoundingClientRect();
+    const bottom = rect.bottom || fallback?.bottom || 0;
+    const left = rect.left || fallback?.left || 0;
+    const provider = this.translitConfig.provider;
+    if (provider) {
+      const node0 = node;
+      provider(latin)
+        .then((remote) => {
+          const cur = this.translit;
+          if (!cur || cur.node !== node0 || cur.latin !== latin || !remote?.length) return;
+          cur.items = Array.from(new Set([...remote, ...cur.items])).slice(0, 6);
+          this.cdr.markForCheck();
+        })
+        .catch(() => undefined);
+    }
+    this.translit = {
+      latin,
+      items,
+      index: 0,
+      top: bottom - body.top + 4,
+      left: Math.max(0, Math.min(left - body.left, body.width - 220)),
+      node,
+      start
+    };
+    this.cdr.markForCheck();
+  }
+
+  pickTranslit(index: number): void {
+    const t = this.translit;
+    if (!t) return;
+    this.translit = null;
+    if (index >= t.items.length) {
+      // keep the English word
+      this.translitSkip = `${t.start}:${t.latin}`;
+      this.cdr.markForCheck();
+      return;
+    }
+    const word = t.items[index];
+    const node = t.node;
+    if (!this.root.contains(node) || node.data.slice(t.start, t.start + t.latin.length) !== t.latin) return;
+    this.saveState(false);
+    node.data = node.data.slice(0, t.start) + word + node.data.slice(t.start + t.latin.length);
+    this.root.focus({ preventScroll: true });
+    this.setCaret(node, t.start + word.length);
+    if (this.translitConfig.learn !== false && index > 0) {
+      const lang = this.typingLang === 'hi' ? 'hi' : 'mr';
+      const book = this.learned[lang];
+      book[t.latin.toLowerCase()] = word;
+      const keys = Object.keys(book);
+      if (keys.length > 500) delete book[keys[0]];
+      try {
+        localStorage.setItem(lang === 'hi' ? 'kalpna-translit-learned-hi' : 'kalpna-translit-learned', JSON.stringify(book));
+      } catch {
+        /* ignore */
+      }
+    }
     this.afterChange();
   }
 

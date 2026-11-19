@@ -28,7 +28,10 @@
           "builder": "@angular-devkit/build-angular:karma",
           "options": {
             "tsConfig": "projects/kalpna-angular-editor/tsconfig.spec.json",
-            "polyfills": ["zone.js", "zone.js/testing"]
+            "polyfills": [
+              "zone.js",
+              "zone.js/testing"
+            ]
           }
         }
       }
@@ -50,7 +53,9 @@
             "outputPath": "dist/demo",
             "index": "projects/demo/src/index.html",
             "browser": "projects/demo/src/main.ts",
-            "polyfills": ["zone.js"],
+            "polyfills": [
+              "zone.js"
+            ],
             "tsConfig": "projects/demo/tsconfig.app.json",
             "assets": [
               {
@@ -58,7 +63,9 @@
                 "input": "projects/demo/public"
               }
             ],
-            "styles": ["projects/demo/src/styles.css"],
+            "styles": [
+              "projects/demo/src/styles.css"
+            ],
             "scripts": []
           },
           "configurations": {
@@ -100,7 +107,10 @@
         "test": {
           "builder": "@angular-devkit/build-angular:karma",
           "options": {
-            "polyfills": ["zone.js", "zone.js/testing"],
+            "polyfills": [
+              "zone.js",
+              "zone.js/testing"
+            ],
             "tsConfig": "projects/demo/tsconfig.spec.json",
             "assets": [
               {
@@ -108,8 +118,42 @@
                 "input": "projects/demo/public"
               }
             ],
-            "styles": ["projects/demo/src/styles.css"],
+            "styles": [
+              "projects/demo/src/styles.css"
+            ],
             "scripts": []
+          }
+        }
+      }
+    },
+    "elements": {
+      "projectType": "application",
+      "root": "projects/elements",
+      "sourceRoot": "projects/elements/src",
+      "prefix": "kalpna",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:application",
+          "options": {
+            "outputPath": "dist/elements",
+            "index": false,
+            "browser": "projects/elements/src/main.ts",
+            "polyfills": [],
+            "tsConfig": "projects/elements/tsconfig.app.json",
+            "assets": [],
+            "styles": [],
+            "scripts": [],
+            "outputHashing": "none",
+            "optimization": true,
+            "sourceMap": false,
+            "extractLicenses": false,
+            "budgets": [
+              {
+                "type": "initial",
+                "maximumWarning": "1MB",
+                "maximumError": "2MB"
+              }
+            ]
           }
         }
       }

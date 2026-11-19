@@ -3,7 +3,7 @@
 **npm account:** [spubhe](https://www.npmjs.com/~spubhe)  
 **Package name:** `kalpna-editor`  
 **GitHub:** https://github.com/simplycodeTech/KalpanaEditor  
-**Current version:** `1.0.0`
+**Current version:** `1.1.0`
 
 ---
 

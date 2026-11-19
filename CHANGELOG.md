@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.1.1 (2026-11)
+
+- Typing-language switch **[ A English | म मराठी | हि हिंदी ]** — first item on the toolbar, highlighted, one click to change; Alt+M cycles
+- **Hindi typing** (`aap kaise hain` → आप कैसे हैं) with its own Hindi word list and learned words
+- Choosing a Devanagari font (Mangal, Noto Sans Devanagari, Mukta, Hind…) switches typing to Marathi automatically
+- Marathi names & surnames in the word list (Suryakant Ubhe → सूर्यकांत उभे); better ranking for longer words
+- Optional online `provider` for transliteration suggestions
+- `Mangal` added to the default font list
+- Plain JS: `typing-language="mr"` attribute, `typingLanguage` option, `setTypingLanguage()` / `getTypingLanguage()` methods; demo section for Marathi typing
+
+## 1.1.0 (2026-11)
+
+- **Plain JavaScript build** for any website: `<script src=".../bundles/kalpna-editor.js">` + `<kalpna-text-editor>` tag
+- `KalpnaEditor.create()`, `KalpnaEditor.replace(textarea)`, `KalpnaEditor.replaceAll()` and `data-kalpna-editor` auto-enhance
+- Form support (`name` → hidden input), `upload-url` image uploads (with headers), DOM events and element methods
+- npm package now ships `bundles/kalpna-editor.js` (unpkg / jsDelivr ready)
+- **Marathi typing** (`namaskar` → नमस्कार): offline transliteration with suggestions, Marathi word list, learning, custom dictionary, Alt+M toggle, `transliteration` config / attribute
+
 ## 1.0.1 (2026-11)
 
 - Published as **`kalpna-editor`** (`npm i kalpna-editor`). Replaces the old 0.0.x `kalpna-editor` package and `kalpna-angular-editor` 0.2.x.

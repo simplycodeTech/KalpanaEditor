@@ -1,21 +1,28 @@
 {
   "name": "kalpna-editor",
-  "version": "1.0.1",
-  "description": "Kalpna Editor — a free, secure, full-featured Angular rich text editor: formatting, fonts, colors, lists, to-do lists, tables with merge/split, images with resize/captions, media embeds, code blocks, Word (.docx) import, find & replace, autoformat, mentions, source mode, word count, print and export.",
+  "version": "1.1.1",
+  "description": "Kalpna Editor — a free, secure, full-featured rich text editor for Angular and any website (one <script> tag): formatting, fonts, colors, lists, to-do lists, tables with merge/split, images with resize/captions, media embeds, code blocks, Word (.docx) import, find & replace, autoformat, mentions, source mode, word count, print and export.",
   "keywords": [
     "angular",
     "contenteditable",
+    "custom-element",
     "docx",
     "editor",
     "free-editor",
     "html-editor",
     "image-resize",
+    "javascript",
     "kalpna",
     "kalpna-editor",
     "marathi",
+    "php",
+    "react",
     "rich-text",
     "tables",
+    "vue",
+    "web-component",
     "word-import",
+    "wordpress",
     "wysiwyg",
     "wysiwyg-editor"
   ],
@@ -44,5 +51,7 @@
   "dependencies": {
     "tslib": "^2.3.0"
   },
-  "sideEffects": false
+  "sideEffects": false,
+  "unpkg": "bundles/kalpna-editor.js",
+  "jsdelivr": "bundles/kalpna-editor.js"
 }

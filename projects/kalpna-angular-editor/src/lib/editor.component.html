@@ -199,6 +199,15 @@
           </div>
         }
 
+        @case ('transliteration') {
+          <div class="kalpna-lang-switch" role="radiogroup" [attr.aria-label]="t('typingLanguage') + ' (Alt+M)'" [title]="t('typingLanguage') + ' (Alt+M)'">
+            @for (o of visibleTypingOptions; track o.code) {
+              <button type="button" class="kalpna-lang-opt" role="radio" [attr.aria-checked]="typingLang === o.code" [class.kalpna-on]="typingLang === o.code"
+                [disabled]="isItemDisabled(item)" (click)="setTypingLanguage(o.code)"><span class="kalpna-lang-glyph">{{ o.glyph }}</span>{{ o.name }}</button>
+            }
+          </div>
+        }
+
         @case ('caseChange') {
           <div class="kalpna-dd">
             <button type="button" class="kalpna-btn" [disabled]="isItemDisabled(item)" [title]="t('caseChange')"
@@ -536,6 +545,24 @@
       <div class="kalpna-resize-size" [style.top.px]="resizeLabel.top" [style.left.px]="resizeLabel.left">{{ resizeLabel.text }}</div>
     }
 
+    <!-- Marathi transliteration suggestions -->
+    @if (translit) {
+      <div class="kalpna-mentions kalpna-translit" role="listbox" [attr.aria-label]="t('transliteration')"
+        [style.top.px]="translit.top" [style.left.px]="translit.left" (mousedown)="$event.preventDefault()">
+        @for (it of translit.items; track $index; let i = $index) {
+          <button type="button" class="kalpna-item" role="option" [attr.aria-selected]="i === translit.index"
+            [class.kalpna-active]="i === translit.index" (click)="pickTranslit(i)">
+            <span class="kalpna-translit-num">{{ i + 1 }}</span><span class="kalpna-translit-word">{{ it }}</span>
+          </button>
+        }
+        <button type="button" class="kalpna-item" role="option" [attr.aria-selected]="translit.index === translit.items.length"
+          [class.kalpna-active]="translit.index === translit.items.length" (click)="pickTranslit(translit.items.length)">
+          <span class="kalpna-translit-num">{{ translit.items.length + 1 }}</span>{{ translit.latin }} <span class="kalpna-item-hint">{{ t('keepEnglish') }}</span>
+        </button>
+        <div class="kalpna-translit-hint">{{ t('translitHint') }}</div>
+      </div>
+    }
+
     <!-- mentions -->
     @if (mention) {
       <div class="kalpna-mentions" role="listbox" [style.top.px]="mention.top" [style.left.px]="mention.left" (mousedown)="$event.preventDefault()">
@@ -553,6 +580,9 @@
   @if (showStatus) {
     <div class="kalpna-status" aria-live="polite">
       @if (importing) { <span style="margin-right:auto">{{ importMessage }}</span> }
+      @if (translitOn && !readOnly && !disabled) {
+        <button type="button" class="kalpna-translit-badge" [title]="t('transliteration') + ' (Alt+M)'" (mousedown)="$event.preventDefault()" (click)="setTypingLanguage('en')">{{ typingLang === 'hi' ? 'हि ' + t('translitOnHi') : 'म ' + t('translitOn') }} ✕</button>
+      }
       <span>{{ t('words') }}: {{ words }}</span>
       <span [class.kalpna-over]="overLimit">{{ t('characters') }}: {{ characters }}@if (config.maxCharacters) { / {{ config.maxCharacters }}}</span>
     </div>

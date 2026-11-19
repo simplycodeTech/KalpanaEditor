@@ -47,6 +47,7 @@ export type KalpnaToolbarItem =
   | 'horizontalLine'
   | 'pageBreak'
   | 'textDirection'
+  | 'transliteration'
   // Insert
   | 'link'
   | 'unlink'
@@ -76,6 +77,7 @@ export type KalpnaToolbarItem =
 
 /** Full toolbar (default). */
 export const DEFAULT_TOOLBAR: KalpnaToolbarItem[] = [
+  'transliteration', '|',
   'undo', 'redo', '|',
   'heading', 'fontFamily', 'fontSize', '|',
   'bold', 'italic', 'underline', 'strikethrough', 'subscript', 'superscript', 'code', '|',
@@ -90,7 +92,7 @@ export const DEFAULT_TOOLBAR: KalpnaToolbarItem[] = [
 
 /** A compact toolbar preset. */
 export const BASIC_TOOLBAR: KalpnaToolbarItem[] = [
-  'undo', 'redo', '|', 'heading', '|', 'bold', 'italic', 'underline', '|',
+  'transliteration', '|', 'undo', 'redo', '|', 'heading', '|', 'bold', 'italic', 'underline', '|',
   'link', 'image', 'table', '|', 'unorderedList', 'orderedList', '|', 'alignment', 'clear'
 ];
 
@@ -114,6 +116,31 @@ export interface KalpnaCodeLanguage {
 export interface KalpnaWordCount {
   words: number;
   characters: number;
+}
+
+/** Marathi transliteration ("namaskar" → "नमस्कार") settings. */
+export interface KalpnaTransliterationConfig {
+  /** Start with Marathi typing switched on (otherwise the user's last choice is remembered). */
+  enabled?: boolean;
+  /** Start in this typing language (overrides `enabled`). */
+  language?: 'en' | 'mr' | 'hi';
+  /** Languages shown on the switch. Default `['en', 'mr', 'hi']`. */
+  languages?: ('en' | 'mr' | 'hi')[];
+  /** Language used when a Devanagari font is chosen while typing English. Default `'mr'`. */
+  fontLanguage?: 'mr' | 'hi';
+  /** Extra word mappings, e.g. `{ "simplycode": "सिंपलीकोड" }` (used for Marathi and Hindi). */
+  dictionary?: Record<string, string>;
+  /** Remember the suggestions a user picks (stored in localStorage). Default true. */
+  learn?: boolean;
+  /** Switch Marathi typing on when a Devanagari font is chosen (and off for Latin fonts). Default true. */
+  followFont?: boolean;
+  /** Extra font names treated as Devanagari fonts. */
+  devanagariFonts?: string[];
+  /**
+   * Optional online provider for better accuracy (e.g. your own API).
+   * Receives the Latin word and returns Devanagari candidates; they are shown first.
+   */
+  provider?: (word: string) => Promise<string[]>;
 }
 
 export interface KalpnaEditorConfig {
@@ -143,6 +170,8 @@ export interface KalpnaEditorConfig {
   codeBlockLanguages?: KalpnaCodeLanguage[];
   /** Mention feeds. */
   mentions?: KalpnaMentionFeed[];
+  /** Marathi phonetic typing. `true` = start enabled. */
+  transliteration?: boolean | KalpnaTransliterationConfig;
   /** Markdown-like autoformat while typing (`# `, `* `, `1. `, `> `, `**bold**`, …). Default true. */
   autoformat?: boolean;
   /** Typographic text transformation (`(c)` → ©, `->` → →, …). Default true. */
@@ -179,6 +208,7 @@ export const DEFAULT_FONT_FAMILIES = [
   'Trebuchet MS',
   'Lucida Sans Unicode',
   'Noto Sans Devanagari',
+  'Mangal',
   'Mukta',
   'Hind'
 ];
@@ -296,6 +326,7 @@ export const KALPNA_LABELS_EN: KalpnaLabels = {
   unsupportedMedia: 'This media URL is not supported.', uploadFailed: 'Image upload failed.',
   unsupportedImage: 'Unsupported image type', imageTooLarge: 'Image is larger than the allowed size',
   codeLanguage: 'Code block language', placeholder: 'Start typing...',
+  transliteration: 'Marathi typing (namaskar → नमस्कार)', translitHint: 'Space / Enter = select · Esc = keep English', translitOn: 'Marathi typing ON', keepEnglish: 'English', typingLanguage: 'Typing language', english: 'English', marathi: 'मराठी (Marathi)', hindi: 'हिंदी (Hindi)', translitOnHi: 'Hindi typing ON',
   importWord: 'Import Word file (.docx)', importing: 'Importing Word file…', importFailed: 'Could not import this Word file.',
   docNotSupported: 'Old .doc files are not supported. Please open the file in Word and save it as .docx.', wordTooLarge: 'Word file is larger than the allowed size'
 };
@@ -347,6 +378,7 @@ export const KALPNA_LABELS_MR: KalpnaLabels = {
   unsupportedMedia: 'हा मीडिया URL समर्थित नाही.', uploadFailed: 'प्रतिमा अपलोड अयशस्वी.',
   unsupportedImage: 'असमर्थित प्रतिमा प्रकार', imageTooLarge: 'प्रतिमा परवानगीपेक्षा मोठी आहे',
   codeLanguage: 'कोड भाषा', placeholder: 'लिहायला सुरुवात करा...',
+  transliteration: 'मराठी टायपिंग (namaskar → नमस्कार)', translitHint: 'Space / Enter = निवडा · Esc = इंग्रजीच ठेवा', translitOn: 'मराठी टायपिंग चालू', keepEnglish: 'English', typingLanguage: 'टायपिंग भाषा', english: 'English', marathi: 'मराठी', hindi: 'हिंदी', translitOnHi: 'हिंदी टायपिंग चालू',
   importWord: 'Word फाईल आयात करा (.docx)', importing: 'Word फाईल आयात होत आहे…', importFailed: 'ही Word फाईल आयात करता आली नाही.',
   docNotSupported: 'जुन्या .doc फाईल्स चालत नाहीत. फाईल Word मध्ये उघडून .docx म्हणून सेव्ह करा.', wordTooLarge: 'Word फाईल परवानगीपेक्षा मोठी आहे'
 };

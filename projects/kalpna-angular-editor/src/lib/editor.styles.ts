@@ -153,6 +153,20 @@ export const KALPNA_EDITOR_CSS = `
 .kalpna-resize-size { position: absolute; z-index: 46; background: rgba(0,0,0,.75); color: #fff; font-size: 11px; padding: 2px 6px; border-radius: 3px; pointer-events: none; }
 .kalpna-mentions { position: absolute; z-index: 55; min-width: 180px; max-height: 220px; overflow-y: auto; background: #fff; border: 1px solid #c4c4c4; border-radius: 4px; box-shadow: 0 3px 12px rgba(0,0,0,.18); padding: 3px; }
 
+.kalpna-translit { min-width: 200px; }
+.kalpna-lang-switch { display: inline-flex; align-items: stretch; height: 32px; border: 1.5px solid #ff9933; border-radius: 8px; overflow: hidden; background: #fff; margin-right: 2px; box-shadow: 0 1px 0 rgba(0,0,0,.04); }
+.kalpna-lang-opt { display: inline-flex; align-items: center; gap: 5px; border: 0; background: transparent; color: #7a3d00; font: inherit; font-size: 13px; font-weight: 600; padding: 0 10px 0 6px; cursor: pointer; white-space: nowrap; }
+.kalpna-lang-opt + .kalpna-lang-opt { border-left: 1.5px solid #ff9933; }
+.kalpna-lang-opt:hover:not(:disabled):not(.kalpna-on) { background: #fff4e5; }
+.kalpna-lang-opt:focus-visible { outline: 2px solid #2977ff; outline-offset: -2px; }
+.kalpna-lang-opt.kalpna-on { background: #ff9933; color: #fff; }
+.kalpna-lang-opt:disabled { opacity: .45; cursor: default; }
+.kalpna-lang-glyph { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 4px; background: #fff4e5; color: #b45309; font-weight: 700; font-size: 13px; }
+.kalpna-lang-opt.kalpna-on .kalpna-lang-glyph { background: rgba(255,255,255,.25); color: #fff; }
+.kalpna-translit-num { display: inline-block; width: 16px; color: #999; font-size: 11px; }
+.kalpna-translit-word { font-family: 'Noto Sans Devanagari', 'Mukta', system-ui, sans-serif; }
+.kalpna-translit-hint { font-size: 10px; color: #888; padding: 4px 10px 2px; border-top: 1px solid #eee; margin-top: 2px; }
+.kalpna-translit-badge { margin-right: auto; border: 0; background: #fff4e5; color: #9a3412; border-radius: 10px; padding: 1px 8px; font-size: 11px; cursor: pointer; font-family: inherit; }
 .kalpna-find { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 8px; background: #f5f5f5; border-bottom: 1px solid #ddd; }
 .kalpna-find .kalpna-input { width: 180px; }
 .kalpna-find-count { font-size: 12px; color: #555; min-width: 60px; }
