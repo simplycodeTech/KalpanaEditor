@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.2 (2026-11)
+
+- Plain JS: the older `<kalpna-html-editor target="#textarea">` tag, `KalpnaEditor.injectContentCss()` and the document `kalpna-ready` event are supported again
+- `kalpna-change` event detail now includes `text`
+
 ## 1.1.1 (2026-11)
 
 - Typing-language switch **[ A English | म मराठी | हि हिंदी ]** — first item on the toolbar, highlighted, one click to change; Alt+M cycles

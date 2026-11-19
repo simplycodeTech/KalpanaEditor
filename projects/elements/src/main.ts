@@ -11,12 +11,13 @@
 import { ApplicationRef, provideExperimentalZonelessChangeDetection } from '@angular/core';
 import { createApplication } from '@angular/platform-browser';
 import { createCustomElement } from '@angular/elements';
-import { KalpnaEditorConfig, KalpnaToolbarItem } from 'kalpna-editor';
+import { KALPNA_CONTENT_CSS, KalpnaEditorConfig, KalpnaToolbarItem, sanitizeHtml } from 'kalpna-editor';
 import { KalpnaElementComponent } from './kalpna-element.component';
 
 declare const KALPNA_VERSION: string;
 
 export const TAG = 'kalpna-text-editor';
+export const LEGACY_TAG = 'kalpna-html-editor';
 
 export interface KalpnaCreateOptions {
   /** Initial HTML. */
@@ -93,6 +94,12 @@ function define(): Promise<void> {
       }
     });
     customElements.define(TAG, Base);
+    // Older pages use <kalpna-html-editor target="#textarea"> — keep them working.
+    if (!customElements.get(LEGACY_TAG)) {
+      const Legacy = createCustomElement(KalpnaElementComponent, { injector: app.injector });
+      customElements.define(LEGACY_TAG, Legacy);
+    }
+    document.dispatchEvent(new Event('kalpna-ready'));
   })();
   return readyPromise;
 }
@@ -182,7 +189,18 @@ const KalpnaEditor = {
   ready: define,
   create,
   replace,
-  replaceAll
+  replaceAll,
+  /** Stylesheet for showing saved HTML inside `.kalpna-content`. */
+  contentCss: KALPNA_CONTENT_CSS,
+  sanitizeHtml,
+  /** Add the content stylesheet to the page (for pages that only display saved HTML). */
+  injectContentCss(): void {
+    if (document.getElementById('kalpna-content-css') || document.getElementById('kalpna-editor-styles')) return;
+    const s = document.createElement('style');
+    s.id = 'kalpna-content-css';
+    s.textContent = KALPNA_CONTENT_CSS;
+    document.head.appendChild(s);
+  }
 };
 
 (window as unknown as { KalpnaEditor: typeof KalpnaEditor }).KalpnaEditor = KalpnaEditor;

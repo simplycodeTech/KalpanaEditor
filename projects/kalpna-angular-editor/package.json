@@ -1,6 +1,6 @@
 {
   "name": "kalpna-editor",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Kalpna Editor — a free, secure, full-featured rich text editor for Angular and any website (one <script> tag): formatting, fonts, colors, lists, to-do lists, tables with merge/split, images with resize/captions, media embeds, code blocks, Word (.docx) import, find & replace, autoformat, mentions, source mode, word count, print and export.",
   "keywords": [
     "angular",

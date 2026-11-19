@@ -10,7 +10,7 @@
 - MIT licensed
 
 **Package name:** `kalpna-editor`  
-**Current version:** `1.1.1`  
+**Current version:** `1.1.2`  
 **Supported Angular:** 17.x – 19.x  
 **Node.js:** 18+ recommended
 
@@ -355,7 +355,7 @@ npm run build:all     # library + plain-JS bundle (dist/kalpna-editor/bundles/ka
 npm run publish:lib   # build everything and publish to npm
 npm start             # run the demo app
 npm test              # unit tests
-npm run pack:lib      # → dist/kalpna-editor/kalpna-editor-1.1.1.tgz
+npm run pack:lib      # → dist/kalpna-editor/kalpna-editor-1.1.2.tgz
 ```
 
 ---

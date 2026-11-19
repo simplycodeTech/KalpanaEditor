@@ -1,4 +1,5 @@
 import {
+  AfterViewInit,
   booleanAttribute,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -83,7 +84,7 @@ function extractUrl(body: unknown): string {
     }
   `
 })
-export class KalpnaElementComponent {
+export class KalpnaElementComponent implements AfterViewInit {
   @ViewChild(KalpnaEditorComponent) editor?: KalpnaEditorComponent;
 
   html = '';
@@ -107,6 +108,33 @@ export class KalpnaElementComponent {
   get value(): string {
     return this.html;
   }
+
+  /** (Legacy `<kalpna-html-editor>`) CSS selector of a textarea to load from and keep in sync. */
+  @Input() target = '';
+  private targetEl: HTMLTextAreaElement | HTMLInputElement | null = null;
+
+  /** (Legacy) `readonly` attribute. */
+  @Input()
+  set readonly(v: boolean | string | null | undefined) {
+    this.readOnly = v !== null && v !== undefined && v !== false && v !== 'false';
+    this.cdr.markForCheck();
+  }
+
+  /** (Legacy) max height of the editing area, e.g. `600px`. */
+  @Input()
+  set maxHeight(v: string | null | undefined) {
+    this._extra['maxHeight'] = v || undefined;
+    this.rebuildConfig();
+  }
+
+  /** (Legacy) character limit. */
+  @Input()
+  set maxCharacters(v: string | number | null | undefined) {
+    const n = typeof v === 'number' ? v : parseInt(v || '', 10);
+    this._extra['maxCharacters'] = n > 0 ? n : undefined;
+    this.rebuildConfig();
+  }
+  private _extra: Record<string, unknown> = {};
 
   /** Form field name — adds a hidden input so normal `<form>` posts include the HTML. */
   @Input() name = '';
@@ -218,9 +246,23 @@ export class KalpnaElementComponent {
     queueMicrotask(() => this.fire('kalpna-ready'));
   }
 
+  ngAfterViewInit(): void {
+    if (this.target) {
+      this.targetEl = document.querySelector(this.target) as HTMLTextAreaElement | null;
+      if (this.targetEl && this.targetEl.value && !this.html) {
+        this.html = this.targetEl.value;
+        this.cdr.markForCheck();
+      }
+    }
+  }
+
   onModelChange(html: string): void {
     this.html = html;
-    this.fire('kalpna-change', { html });
+    if (this.targetEl) {
+      this.targetEl.value = html;
+      this.targetEl.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    this.fire('kalpna-change', { html, text: this.editor?.getText() ?? '' });
   }
 
   fire(name: string, detail?: unknown): void {
@@ -228,7 +270,9 @@ export class KalpnaElementComponent {
   }
 
   private rebuildConfig(): void {
+    const extra = Object.fromEntries(Object.entries(this._extra).filter(([, v]) => v !== undefined));
     this.effectiveConfig = {
+      ...extra,
       ...this._config,
       ...(this._language ? { language: this._language } : {}),
       ...(this._translit !== undefined ? { transliteration: this._translit } : {}),
